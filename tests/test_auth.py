@@ -4,24 +4,13 @@ import httpx
 import pytest
 import respx
 
-from fidelity_trader.auth.session import AuthSession, AuthenticationError
-
-AUTH_URL = "https://ecaap.fidelity.com"
-BASE_URL = "https://digital.fidelity.com"
-
-
-def _success_response(message: str, code: int = 1200) -> dict:
-    return {
-        "responseBaseInfo": {
-            "sessionTokens": None,
-            "status": {"code": code, "message": message},
-            "links": [],
-        }
-    }
+from fidelity_trader.auth.session import AuthSession
+from fidelity_trader.exceptions import AuthenticationError
+from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
 @respx.mock
-def test_login_success():
+def test_login_success(fidelity_response):
     # Step 1: init login page
     respx.get(f"{BASE_URL}/prgw/digital/login/atp").mock(
         return_value=httpx.Response(200, text="<html>login</html>")
@@ -32,23 +21,22 @@ def test_login_success():
     )
     # Step 3: get remembered username
     respx.get(f"{AUTH_URL}/user/identity/remember/username").mock(
-        return_value=httpx.Response(200, json=_success_response("User Identified"))
+        return_value=httpx.Response(200, json=fidelity_response("User Identified"))
     )
     # Step 4: select remembered username
     respx.post(f"{AUTH_URL}/user/identity/remember/username/1").mock(
-        return_value=httpx.Response(200, json=_success_response("User Identified"))
+        return_value=httpx.Response(200, json=fidelity_response("User Identified"))
     )
     # Step 5: password auth
     respx.post(f"{AUTH_URL}/user/factor/password/authentication").mock(
-        return_value=httpx.Response(200, json=_success_response("User Authenticated"))
+        return_value=httpx.Response(200, json=fidelity_response("User Authenticated"))
     )
     # Step 6: update remembered username
     respx.put(f"{AUTH_URL}/user/identity/remember/username").mock(
-        return_value=httpx.Response(200, json=_success_response("OK"))
+        return_value=httpx.Response(200, json=fidelity_response("OK"))
     )
     # Step 7: create session
-    session_resp = _success_response("Session Created")
-    session_resp["authenticators"] = []
+    session_resp = fidelity_response("Session Created", authenticators=[])
     respx.post(f"{AUTH_URL}/user/session/login").mock(
         return_value=httpx.Response(200, json=session_resp)
     )
@@ -63,7 +51,7 @@ def test_login_success():
 
 
 @respx.mock
-def test_login_bad_password():
+def test_login_bad_password(fidelity_response):
     respx.get(f"{BASE_URL}/prgw/digital/login/atp").mock(
         return_value=httpx.Response(200)
     )
@@ -71,14 +59,14 @@ def test_login_bad_password():
         return_value=httpx.Response(204)
     )
     respx.get(f"{AUTH_URL}/user/identity/remember/username").mock(
-        return_value=httpx.Response(200, json=_success_response("User Identified"))
+        return_value=httpx.Response(200, json=fidelity_response("User Identified"))
     )
     respx.post(f"{AUTH_URL}/user/identity/remember/username/1").mock(
-        return_value=httpx.Response(200, json=_success_response("User Identified"))
+        return_value=httpx.Response(200, json=fidelity_response("User Identified"))
     )
     respx.post(f"{AUTH_URL}/user/factor/password/authentication").mock(
         return_value=httpx.Response(
-            200, json=_success_response("Authentication Failed", code=1400)
+            200, json=fidelity_response("Authentication Failed", code=1400)
         )
     )
 

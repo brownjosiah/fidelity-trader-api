@@ -10,13 +10,9 @@ Login flow:
   7. POST ecaap/user/session/login          -- create authenticated session (gets ATC/FC/RC/SC)
 """
 
-import uuid
-
 import httpx
-
-
-def _req_id() -> str:
-    return f"REQ{uuid.uuid4().hex}"
+from fidelity_trader._http import make_req_id
+from fidelity_trader.exceptions import AuthenticationError
 
 
 class AuthSession:
@@ -48,27 +44,27 @@ class AuthSession:
         self._http.request(
             "DELETE",
             f"{self._auth_url}/user/session/login",
-            headers={"fsreqid": _req_id(), "Accept-Token-Type": "FAC"},
+            headers={"fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
             json={},
         )
 
         # Step 3: Check for remembered username
         self._http.get(
             f"{self._auth_url}/user/identity/remember/username",
-            headers={"fsreqid": _req_id()},
+            headers={"fsreqid": make_req_id()},
         )
 
         # Step 4: Select remembered username (gets ET token cookie)
         self._http.post(
             f"{self._auth_url}/user/identity/remember/username/1",
-            headers={"fsreqid": _req_id()},
+            headers={"fsreqid": make_req_id()},
             json={},
         )
 
         # Step 5: Submit credentials
         auth_resp = self._http.post(
             f"{self._auth_url}/user/factor/password/authentication",
-            headers={"fsreqid": _req_id()},
+            headers={"fsreqid": make_req_id()},
             json={"username": username, "password": password},
         )
         auth_data = auth_resp.json()
@@ -81,7 +77,7 @@ class AuthSession:
         # Step 6: Update remembered username
         self._http.put(
             f"{self._auth_url}/user/identity/remember/username",
-            headers={"fsreqid": _req_id()},
+            headers={"fsreqid": make_req_id()},
             json={},
         )
 
@@ -89,7 +85,7 @@ class AuthSession:
         session_resp = self._http.post(
             f"{self._auth_url}/user/session/login",
             headers={
-                "fsreqid": _req_id(),
+                "fsreqid": make_req_id(),
                 "eventtype": "LOGIN",
                 "sub_eventtype": "rt_login",
             },
@@ -111,11 +107,7 @@ class AuthSession:
             self._http.request(
                 "DELETE",
                 f"{self._auth_url}/user/session/login",
-                headers={"fsreqid": _req_id(), "Accept-Token-Type": "FAC"},
+                headers={"fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
                 json={},
             )
             self._authenticated = False
-
-
-class AuthenticationError(Exception):
-    """Raised when login or session creation fails."""
