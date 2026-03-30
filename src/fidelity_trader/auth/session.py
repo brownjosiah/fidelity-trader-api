@@ -12,7 +12,7 @@ Login flow:
 
 import httpx
 from fidelity_trader._http import make_req_id
-from fidelity_trader.exceptions import AuthenticationError
+from fidelity_trader.exceptions import AuthenticationError, CSRFTokenError
 
 
 class AuthSession:
@@ -23,6 +23,7 @@ class AuthSession:
         self._base_url = base_url
         self._auth_url = auth_url
         self._authenticated = False
+        self._csrf_token: str | None = None
 
     @property
     def is_authenticated(self) -> bool:
@@ -101,6 +102,30 @@ class AuthSession:
         self._authenticated = True
         return session_data
 
+    def get_csrf_token(self) -> str:
+        """Fetch and cache the CSRF token from the tokens endpoint."""
+        if self._csrf_token is not None:
+            return self._csrf_token
+        resp = self._http.get(f"{self._base_url}/prgw/digital/research/api/tokens")
+        if resp.status_code != 200:
+            raise CSRFTokenError(
+                f"Failed to fetch CSRF token: HTTP {resp.status_code}"
+            )
+        data = resp.json()
+        token = data.get("csrfToken")
+        if not token:
+            raise CSRFTokenError("CSRF token missing from response")
+        self._csrf_token = token
+        return self._csrf_token
+
+    def csrf_headers(self) -> dict:
+        """Return headers dict containing the CSRF token."""
+        return {"X-CSRF-TOKEN": self.get_csrf_token()}
+
+    def invalidate_csrf(self) -> None:
+        """Clear the cached CSRF token."""
+        self._csrf_token = None
+
     def logout(self) -> None:
         """Clear the session."""
         if self._authenticated:
@@ -111,3 +136,4 @@ class AuthSession:
                 json={},
             )
             self._authenticated = False
+            self.invalidate_csrf()
