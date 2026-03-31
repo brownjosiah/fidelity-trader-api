@@ -105,8 +105,33 @@ Symbols are split across connections, likely for load balancing.
 4. Sessions are region-aware (us-east-1c, us-east-2a, us-east-2b).
 5. No additional auth beyond cookies — the WebSocket connection inherits the session cookies from login.
 
-## Next Capture Steps
-1. **Market hours capture** — capture during trading hours to see real tick data flowing (bid, ask, last, volume, Greeks)
-2. **Full field mapping** — subscribe to a single equity + option and document all field numbers
-3. **Unsubscribe command** — capture what happens when switching watchlists or closing a chart
-4. **News streaming** — connect to newsedge.net with the access token from the Authorize endpoint
+## Wireshark Capture (2026-03-31, Market Hours)
+
+Captured 2 minutes of live MDDS traffic via tshark on Wi-Fi interface, filtering for `23.219.160.0/24:443` (Akamai edge for mdds-i-tc.fidelity.com).
+
+### Results
+- **40,708 packets, 22.5 MB** in 120 seconds (~190 KB/sec sustained)
+- **6 parallel persistent WebSocket connections** splitting symbols across them
+- All TLS-encrypted (content not readable from Wireshark, but architecture confirmed)
+
+### Connection Architecture
+| Connection | Destination IP | Data Received | Notes |
+|-----------|---------------|--------------|-------|
+| :35629 → .6:443 | mdds-i-tc | 6.0 MB | Primary/heaviest feed |
+| :35627 → .8:443 | mdds-i-tc | 3.2 MB | |
+| :35625 → .8:443 | mdds-i-tc | 2.9 MB | |
+| :35624 → .8:443 | mdds-i-tc | 3.8 MB | |
+| :35628 → .8:443 | mdds-i-tc | 3.6 MB | |
+| :35626 → .8:443 | mdds-i-tc | 1.0 MB | Lightest feed |
+| :35652 → .19:443 | mdds-i | 674 KB | Session init/heartbeat |
+
+### Implications for SDK
+- Client should support multi-connection architecture (split symbols across N connections)
+- Default conflation rate of 1000ms (1 update/sec per symbol) still generates ~190 KB/sec
+- Akamai CDN fronts the service — connections go to nearest edge POP
+- No additional auth beyond cookies — WebSocket upgrade uses session cookies from login
+
+## Remaining Capture Gaps
+1. **Unsubscribe command** — capture what happens when switching watchlists or closing a chart
+2. **News streaming** — connect to newsedge.net with the access token from the Authorize endpoint
+3. **Live tick deltas** — the mitmproxy capture showed initial subscription snapshots; need to capture ongoing update messages (partial field updates vs full snapshots)
