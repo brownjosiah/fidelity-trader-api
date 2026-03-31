@@ -1,11 +1,12 @@
 """Models for fastquote option chain and depth-of-market (montage) responses.
 
-Responses from fastquote.fidelity.com are XML; these dataclasses represent
-the parsed data after xml.etree.ElementTree processing.
+Responses from fastquote.fidelity.com can be XML or JSON depending on
+the client headers. These dataclasses handle both formats.
 """
 
 from __future__ import annotations
 
+import json
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
@@ -77,6 +78,46 @@ class OptionChainResponse:
 
         return cls(symbol=symbol, calls=calls, puts=puts)
 
+    @classmethod
+    def from_json(cls, data: dict) -> "OptionChainResponse":
+        """Parse JSON response (same structure as XML but in JSON format)."""
+        base = data.get("BASE", {})
+        symbol = base.get("ri", "")
+
+        calls: list[ChainExpiration] = []
+        puts: list[ChainExpiration] = []
+
+        chain = data.get("CHAIN", {})
+        for side, target in [("CALLS", calls), ("PUTS", puts)]:
+            side_data = chain.get(side, {})
+            exp_dates = side_data.get("EXP_DATE", [])
+            if isinstance(exp_dates, dict):
+                exp_dates = [exp_dates]
+            for exp in exp_dates:
+                options_data = exp.get("O", [])
+                if isinstance(options_data, dict):
+                    options_data = [options_data]
+                options = [
+                    ChainOption(
+                        symbol=o.get("s", ""),
+                        contract_symbol=o.get("cs", ""),
+                        strike=float(o.get("st", "0")),
+                        expiry_type=o.get("et", ""),
+                    )
+                    for o in options_data
+                ]
+                target.append(ChainExpiration(date=exp.get("dt", ""), options=options))
+
+        return cls(symbol=symbol, calls=calls, puts=puts)
+
+    @classmethod
+    def parse(cls, text: str) -> "OptionChainResponse":
+        """Auto-detect XML or JSON and parse accordingly."""
+        stripped = text.strip()
+        if stripped.startswith("<"):
+            return cls.from_xml(stripped)
+        return cls.from_json(json.loads(stripped))
+
 
 @dataclass
 class MontageQuote:
@@ -140,3 +181,42 @@ class MontageResponse:
             call_put=call_put,
             quotes=quotes,
         )
+
+    @classmethod
+    def from_json(cls, data: dict) -> "MontageResponse":
+        """Parse JSON response."""
+        # JSON wraps in OPTIONS_MONTAGE unlike XML where it's the root
+        if "OPTIONS_MONTAGE" in data:
+            data = data["OPTIONS_MONTAGE"]
+        base = data.get("BASE", {})
+        quotes_data = data.get("EXCH_QUOTES", {}).get("O", [])
+        if isinstance(quotes_data, dict):
+            quotes_data = [quotes_data]
+        quotes = [
+            MontageQuote(
+                symbol=q.get("se", ""),
+                exchange_name=q.get("en", ""),
+                exchange_code=q.get("ec", ""),
+                bid=float(q.get("b", "0")),
+                bid_size=int(q.get("bs", "0")),
+                ask=float(q.get("a", "0")),
+                ask_size=int(q.get("as", "0")),
+            )
+            for q in quotes_data
+        ]
+        return cls(
+            symbol=base.get("S", ""),
+            contract_symbol=base.get("cs", ""),
+            expiration=base.get("ex", ""),
+            strike=float(base.get("st", "0")),
+            call_put=base.get("cp", ""),
+            quotes=quotes,
+        )
+
+    @classmethod
+    def parse(cls, text: str) -> "MontageResponse":
+        """Auto-detect XML or JSON and parse accordingly."""
+        stripped = text.strip()
+        if stripped.startswith("<"):
+            return cls.from_xml(stripped)
+        return cls.from_json(json.loads(stripped))

@@ -31,13 +31,13 @@ class FastQuoteAPI:
             params=params,
         )
         resp.raise_for_status()
-        return OptionChainResponse.from_xml(resp.text)
+        return OptionChainResponse.parse(resp.text)
 
     def get_montage(self, option_symbol: str) -> MontageResponse:
         """Fetch depth-of-market (exchange-level) quotes for a single option symbol.
 
         Calls the dtmontage endpoint observed in captured Trader+ traffic.
-        The response is XML and is parsed into a MontageResponse.
+        The response can be XML or JSON.
         """
         params = {"symbols": option_symbol, "productid": "atn"}
         resp = self._http.get(
@@ -45,4 +45,4 @@ class FastQuoteAPI:
             params=params,
         )
         resp.raise_for_status()
-        return MontageResponse.from_xml(resp.text)
+        return MontageResponse.parse(resp.text)
