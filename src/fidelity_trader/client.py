@@ -36,9 +36,12 @@ class FidelityClient:
         self.research = ResearchAPI(self._http)
         self.streaming = StreamingNewsAPI(self._http)
 
-    def login(self, username: str, password: str) -> dict:
-        """Authenticate with Fidelity and establish a session."""
-        return self._auth.login(username, password)
+    def login(self, username: str, password: str, totp_secret: str = None) -> dict:
+        """Authenticate with Fidelity and establish a session.
+
+        If totp_secret is provided, generates and submits a TOTP code for 2FA.
+        """
+        return self._auth.login(username, password, totp_secret=totp_secret)
 
     def logout(self) -> None:
         """Clear the current session."""

@@ -11,8 +11,22 @@ Login flow:
 """
 
 import httpx
-from fidelity_trader._http import make_req_id
+from fidelity_trader._http import make_req_id, REQUEST_HEADERS
 from fidelity_trader.exceptions import AuthenticationError, CSRFTokenError
+
+# Login-specific headers that override the ATP session defaults
+_LOGIN_HEADERS = {
+    "AppId": REQUEST_HEADERS["AppId"],
+    "AppName": REQUEST_HEADERS["AppName"],
+    "Content-Type": REQUEST_HEADERS["Content-Type"],
+    "Accept": REQUEST_HEADERS["Accept"],
+    "Origin": REQUEST_HEADERS["Origin"],
+    "Referer": REQUEST_HEADERS["Referer"],
+    "Accept-Token-Type": REQUEST_HEADERS["Accept-Token-Type"],
+    "Accept-Token-Location": REQUEST_HEADERS["Accept-Token-Location"],
+    "Token-Location": REQUEST_HEADERS["Token-Location"],
+    "Cache-Control": REQUEST_HEADERS["Cache-Control"],
+}
 
 
 class AuthSession:
@@ -29,8 +43,11 @@ class AuthSession:
     def is_authenticated(self) -> bool:
         return self._authenticated
 
-    def login(self, username: str, password: str) -> dict:
-        """Execute the full login flow. Returns session creation response."""
+    def login(self, username: str, password: str, totp_secret: str = None) -> dict:
+        """Execute the full login flow. Returns session creation response.
+
+        If totp_secret is provided, generates and submits a TOTP code for 2FA.
+        """
 
         # Step 1: Init login page (sets initial cookies like SESSION_SCTX)
         self._http.get(
@@ -39,33 +56,34 @@ class AuthSession:
                 "exp": "new",
                 "AuthRedUrl": f"{self._base_url}/ftgw/digital/portfolio/extendsession",
             },
+            headers=_LOGIN_HEADERS,
         )
 
         # Step 2: Clear any existing session
         self._http.request(
             "DELETE",
             f"{self._auth_url}/user/session/login",
-            headers={"fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
+            headers={**_LOGIN_HEADERS, "fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
             json={},
         )
 
         # Step 3: Check for remembered username
         self._http.get(
             f"{self._auth_url}/user/identity/remember/username",
-            headers={"fsreqid": make_req_id()},
+            headers={**_LOGIN_HEADERS, "fsreqid": make_req_id()},
         )
 
         # Step 4: Select remembered username (gets ET token cookie)
         self._http.post(
             f"{self._auth_url}/user/identity/remember/username/1",
-            headers={"fsreqid": make_req_id()},
+            headers={**_LOGIN_HEADERS, "fsreqid": make_req_id()},
             json={},
         )
 
         # Step 5: Submit credentials
         auth_resp = self._http.post(
             f"{self._auth_url}/user/factor/password/authentication",
-            headers={"fsreqid": make_req_id()},
+            headers={**_LOGIN_HEADERS, "fsreqid": make_req_id()},
             json={"username": username, "password": password},
         )
         auth_data = auth_resp.json()
@@ -78,22 +96,36 @@ class AuthSession:
         # Step 6: Update remembered username
         self._http.put(
             f"{self._auth_url}/user/identity/remember/username",
-            headers={"fsreqid": make_req_id()},
+            headers={**_LOGIN_HEADERS, "fsreqid": make_req_id()},
             json={},
         )
 
         # Step 7: Create session (gets ATC, FC, RC, SC cookies)
-        session_resp = self._http.post(
-            f"{self._auth_url}/user/session/login",
-            headers={
-                "fsreqid": make_req_id(),
-                "eventtype": "LOGIN",
-                "sub_eventtype": "rt_login",
-            },
-            json={},
-        )
-        session_data = session_resp.json()
+        session_data = self._create_session()
         session_status = session_data.get("responseBaseInfo", {}).get("status", {})
+
+        # Step 7b: Handle 2FA if session returns code 1201
+        if session_status.get("code") == 1201 and totp_secret:
+            import pyotp
+            totp_code = pyotp.TOTP(totp_secret).now()
+
+            # Submit TOTP code
+            totp_resp = self._http.post(
+                f"{self._auth_url}/user/factor/totp/authentication",
+                headers={**_LOGIN_HEADERS, "fsreqid": make_req_id()},
+                json={"securityCode": totp_code},
+            )
+            totp_data = totp_resp.json()
+            totp_status = totp_data.get("responseBaseInfo", {}).get("status", {})
+            if totp_status.get("code") != 1200:
+                raise AuthenticationError(
+                    f"2FA failed: {totp_status.get('message', 'Unknown error')}"
+                )
+
+            # Retry session creation after 2FA
+            session_data = self._create_session()
+            session_status = session_data.get("responseBaseInfo", {}).get("status", {})
+
         if session_status.get("code") != 1200:
             raise AuthenticationError(
                 f"Session creation failed: {session_status.get('message', 'Unknown error')}"
@@ -101,6 +133,20 @@ class AuthSession:
 
         self._authenticated = True
         return session_data
+
+    def _create_session(self) -> dict:
+        """POST to session/login and return parsed JSON."""
+        resp = self._http.post(
+            f"{self._auth_url}/user/session/login",
+            headers={
+                **_LOGIN_HEADERS,
+                "fsreqid": make_req_id(),
+                "eventtype": "LOGIN",
+                "sub_eventtype": "rt_login",
+            },
+            json={},
+        )
+        return resp.json()
 
     def get_csrf_token(self) -> str:
         """Fetch and cache the CSRF token from the tokens endpoint."""
@@ -132,7 +178,7 @@ class AuthSession:
             self._http.request(
                 "DELETE",
                 f"{self._auth_url}/user/session/login",
-                headers={"fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
+                headers={**_LOGIN_HEADERS, "fsreqid": make_req_id(), "Accept-Token-Type": "FAC"},
                 json={},
             )
             self._authenticated = False
