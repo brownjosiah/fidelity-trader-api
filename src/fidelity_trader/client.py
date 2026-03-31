@@ -16,6 +16,7 @@ from fidelity_trader.streaming.news import StreamingNewsAPI
 from fidelity_trader.watchlists.watchlists import WatchlistAPI
 from fidelity_trader.portfolio.accounts import AccountsAPI
 from fidelity_trader.market_data.fastquote import FastQuoteAPI
+from fidelity_trader.market_data.chart import ChartAPI
 from fidelity_trader.research.analytics import OptionAnalyticsAPI
 from fidelity_trader.alerts.subscription import AlertsAPI
 
@@ -51,6 +52,7 @@ class FidelityClient:
         self.watchlists = WatchlistAPI(self._http)
         self.accounts = AccountsAPI(self._http)
         self.option_chain = FastQuoteAPI(self._http)
+        self.chart = ChartAPI(self._http)
         self.option_analytics = OptionAnalyticsAPI(self._http)
         self.alerts = AlertsAPI(self._http)
 

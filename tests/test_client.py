@@ -21,6 +21,7 @@ from fidelity_trader.streaming.news import StreamingNewsAPI
 from fidelity_trader.watchlists.watchlists import WatchlistAPI
 from fidelity_trader.portfolio.accounts import AccountsAPI
 from fidelity_trader.market_data.fastquote import FastQuoteAPI
+from fidelity_trader.market_data.chart import ChartAPI
 from fidelity_trader.research.analytics import OptionAnalyticsAPI
 from fidelity_trader.alerts.subscription import AlertsAPI
 from fidelity_trader._http import BASE_URL, AUTH_URL
@@ -47,6 +48,7 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.watchlists, WatchlistAPI)
         assert isinstance(client.accounts, AccountsAPI)
         assert isinstance(client.option_chain, FastQuoteAPI)
+        assert isinstance(client.chart, ChartAPI)
         assert isinstance(client.option_analytics, OptionAnalyticsAPI)
         assert isinstance(client.alerts, AlertsAPI)
     finally:
@@ -71,6 +73,7 @@ def test_all_modules_share_same_http_client():
         assert client.watchlists._http is http
         assert client.accounts._http is http
         assert client.option_chain._http is http
+        assert client.chart._http is http
         assert client.option_analytics._http is http
         assert client.alerts._http is http
     finally:
