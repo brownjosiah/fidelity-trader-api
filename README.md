@@ -617,6 +617,48 @@ This SDK is built from captured network traffic. The workflow for adding a new m
 - Credentials never hardcoded — use credential providers
 - Capture files (`*.flow`, `*.har`) are gitignored
 
+## Roadmap
+
+Development follows two phases. **Phase 1 (SDK completeness) must come first** — the service layer is only as useful as the SDK it wraps.
+
+### Phase 1: Complete Trader+ API Coverage
+
+The SDK currently covers 23 of Fidelity Trader+'s API modules. The remaining work focuses on capturing and implementing the missing endpoints to reach full parity with the desktop application.
+
+**High priority — complete the trading workflow:**
+- Single-leg option orders (preview + place)
+- Order modification (change price/qty on open orders)
+- Conditional/triggered orders (stop-loss, OCO, brackets)
+- Level 2 streaming depth (real-time book data via MDDS)
+
+**Medium priority — fill data gaps:**
+- Watchlist CRUD (create, rename, delete — currently read-only)
+- Alerts CRUD (create, edit, delete — currently subscribe-only)
+- Full priced option chain (live bid/ask for all strikes)
+- Margin/buying power details
+- Stock/option screener
+- Fundamentals and company data
+- News WebSocket feed
+- Market holiday calendar
+- Session keep-alive for long-running bots
+
+**Already captured, needs implementation:**
+- Holiday calendar, staged orders, price triggers, session extend endpoint
+
+See [`docs/BACKLOG.md`](docs/BACKLOG.md) for the full backlog with 32 items across 4 categories.
+
+### Phase 2: Self-Hosted Service Layer
+
+Once the SDK has sufficient Trader+ coverage, wrap it in a self-hosted REST/WebSocket service that any language or tool can consume:
+
+- **FastAPI REST API** exposing all SDK modules as HTTP endpoints
+- **Real-time streaming fan-out** — single MDDS connection, multiple consumers via SSE/WebSocket
+- **Session management** — auto keep-alive, re-auth, encrypted credential storage
+- **Docker deployment** — single `docker-compose up` on Linux
+- **Language-agnostic** — call from Node, Go, Rust, shell scripts, or anything that speaks HTTP
+
+See [`docs/SERVICE_PLAN.md`](docs/SERVICE_PLAN.md) for the full implementation plan.
+
 ## License
 
 MIT

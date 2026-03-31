@@ -109,10 +109,12 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 ## Priority Summary
 
+All SDK work (Phases 1-4 below) takes priority over the service layer. The self-hosted REST/WebSocket service ([`SERVICE_PLAN.md`](SERVICE_PLAN.md)) is Phase 2 of the overall project roadmap and should begin once the core trading workflow is complete.
+
 | Priority | Count | Items |
 |----------|-------|-------|
-| **High** | 5 | Single-leg options (2.1), Order modify (2.2), Conditional orders (2.3), L2 streaming (3.1), captured but not implemented (various) |
-| **Medium** | 16 | Holiday calendar (1.1), Staged orders (1.2), Price triggers (1.4), Session keepalive (1.7), Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), Margin (2.7), Screener (2.8), News feed (2.9/3.2), Fundamentals (2.10), Stale models (4.1), CLAUDE.md (4.2), Walkthrough (4.3), Session refresh (4.4) |
+| **High** | 4 | Single-leg options (2.1), Order modify (2.2), Conditional orders (2.3), L2 streaming (3.1) |
+| **Medium** | 17 | Holiday calendar (1.1), Staged orders (1.2), Price triggers (1.4), Session keepalive (1.7), Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), Margin (2.7), Screener (2.8), News feed (2.9/3.2), Fundamentals (2.10), Stale models (4.1), CLAUDE.md (4.2), Walkthrough (4.3), Session refresh (4.4) |
 | **Low** | 10 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), PyPI (4.7) |
 | **Skip** | 1 | Login logging/telemetry (1.8) |
 
