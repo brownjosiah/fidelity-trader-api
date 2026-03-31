@@ -53,8 +53,30 @@ class MDDSQuote:
         return float(v) if v else None
 
     @property
+    def last_trade_price(self) -> Optional[float]:
+        v = self.data.get("last_trade_price")
+        return float(v) if v else None
+
+    @property
+    def last_trade_size(self) -> Optional[int]:
+        v = self.data.get("last_trade_size")
+        return int(v) if v else None
+
+    @property
+    def last_trade_time(self) -> Optional[str]:
+        return self.data.get("last_trade_time") or None
+
+    @property
+    def last_trade_exchange(self) -> Optional[str]:
+        return self.data.get("last_trade_exchange") or None
+
+    @property
     def is_option(self) -> bool:
         return self.security_type == "OP"
+
+    @property
+    def has_trade_data(self) -> bool:
+        return self.last_trade_price is not None
 
 
 @dataclass
@@ -142,12 +164,27 @@ class MDDSClient:
         if data.get("ResponseType") == "-1":
             return []
 
-        # Success response with data
+        # Success response with data (initial snapshot)
         if data.get("ResponseType") == "1" and "Data" in data:
             quotes = []
             for item in data["Data"]:
                 if item.get("0") != "success":
                     continue
+                symbol = item.get("6", item.get("289", ""))
+                sec_type = item.get("128", "")
+                parsed = parse_fields(item)
+                quotes.append(MDDSQuote(
+                    symbol=symbol,
+                    security_type=sec_type,
+                    data=parsed,
+                    raw=item,
+                ))
+            return quotes
+
+        # Streaming tick updates (T&S data, live price changes)
+        if data.get("ResponseType") == "0" and "Data" in data:
+            quotes = []
+            for item in data["Data"]:
                 symbol = item.get("6", item.get("289", ""))
                 sec_type = item.get("128", "")
                 parsed = parse_fields(item)

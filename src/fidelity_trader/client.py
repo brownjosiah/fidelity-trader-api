@@ -19,6 +19,12 @@ from fidelity_trader.market_data.fastquote import FastQuoteAPI
 from fidelity_trader.market_data.chart import ChartAPI
 from fidelity_trader.research.analytics import OptionAnalyticsAPI
 from fidelity_trader.alerts.subscription import AlertsAPI
+from fidelity_trader.portfolio.closed_positions import ClosedPositionsAPI
+from fidelity_trader.portfolio.loaned_securities import LoanedSecuritiesAPI
+from fidelity_trader.portfolio.tax_lots import TaxLotAPI
+from fidelity_trader.reference.markets import AvailableMarketsAPI
+from fidelity_trader.settings.preferences import PreferencesAPI
+from fidelity_trader.auth.security_context import SecurityContextAPI
 
 
 class FidelityClient:
@@ -55,6 +61,12 @@ class FidelityClient:
         self.chart = ChartAPI(self._http)
         self.option_analytics = OptionAnalyticsAPI(self._http)
         self.alerts = AlertsAPI(self._http)
+        self.closed_positions = ClosedPositionsAPI(self._http)
+        self.loaned_securities = LoanedSecuritiesAPI(self._http)
+        self.tax_lots = TaxLotAPI(self._http)
+        self.available_markets = AvailableMarketsAPI(self._http)
+        self.preferences = PreferencesAPI(self._http)
+        self.security_context = SecurityContextAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.

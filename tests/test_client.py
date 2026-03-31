@@ -24,6 +24,12 @@ from fidelity_trader.market_data.fastquote import FastQuoteAPI
 from fidelity_trader.market_data.chart import ChartAPI
 from fidelity_trader.research.analytics import OptionAnalyticsAPI
 from fidelity_trader.alerts.subscription import AlertsAPI
+from fidelity_trader.portfolio.closed_positions import ClosedPositionsAPI
+from fidelity_trader.portfolio.loaned_securities import LoanedSecuritiesAPI
+from fidelity_trader.portfolio.tax_lots import TaxLotAPI
+from fidelity_trader.reference.markets import AvailableMarketsAPI
+from fidelity_trader.settings.preferences import PreferencesAPI
+from fidelity_trader.auth.security_context import SecurityContextAPI
 from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
@@ -51,6 +57,12 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.chart, ChartAPI)
         assert isinstance(client.option_analytics, OptionAnalyticsAPI)
         assert isinstance(client.alerts, AlertsAPI)
+        assert isinstance(client.closed_positions, ClosedPositionsAPI)
+        assert isinstance(client.loaned_securities, LoanedSecuritiesAPI)
+        assert isinstance(client.tax_lots, TaxLotAPI)
+        assert isinstance(client.available_markets, AvailableMarketsAPI)
+        assert isinstance(client.preferences, PreferencesAPI)
+        assert isinstance(client.security_context, SecurityContextAPI)
     finally:
         client.close()
 
@@ -76,6 +88,12 @@ def test_all_modules_share_same_http_client():
         assert client.chart._http is http
         assert client.option_analytics._http is http
         assert client.alerts._http is http
+        assert client.closed_positions._http is http
+        assert client.loaned_securities._http is http
+        assert client.tax_lots._http is http
+        assert client.available_markets._http is http
+        assert client.preferences._http is http
+        assert client.security_context._http is http
     finally:
         client.close()
 

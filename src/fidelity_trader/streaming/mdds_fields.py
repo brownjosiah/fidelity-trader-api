@@ -81,7 +81,18 @@ OPTION_FIELDS = {
     "302": "contract_root_symbol",
 }
 
-ALL_FIELDS = {**EQUITY_FIELDS, **OPTION_FIELDS}
+# Time & Sales fields (discovered in MDDS ResponseType "0" streaming updates)
+TIME_SALES_FIELDS = {
+    "1159": "last_trade_price",
+    "1160": "last_trade_size",
+    "1161": "last_trade_time",
+    "1162": "last_trade_exchange",
+    "1163": "last_trade_condition",
+    "1164": "last_trade_tick",
+    "1165": "last_trade_sequence",
+}
+
+ALL_FIELDS = {**EQUITY_FIELDS, **OPTION_FIELDS, **TIME_SALES_FIELDS}
 
 
 def parse_fields(raw_data: dict, field_map: dict = None) -> dict:
@@ -91,7 +102,9 @@ def parse_fields(raw_data: dict, field_map: dict = None) -> dict:
     """
     if field_map is None:
         # Auto-detect: if field 184 (strike) exists, use option fields
+        # Always include T&S fields since they appear in streaming updates
         field_map = OPTION_FIELDS if "184" in raw_data else EQUITY_FIELDS
+        field_map = {**field_map, **TIME_SALES_FIELDS}
 
     result = {}
     for k, v in raw_data.items():

@@ -5,6 +5,7 @@ import pytest
 from fidelity_trader.streaming.mdds_fields import (
     EQUITY_FIELDS,
     OPTION_FIELDS,
+    TIME_SALES_FIELDS,
     ALL_FIELDS,
     parse_fields,
 )
@@ -27,6 +28,8 @@ SUCCESS_MSG = '{"Command":"subscribe","ResponseType":"1","Data":[{"0":"success",
 OPTION_MSG = '{"Command":"subscribe","ResponseType":"1","Data":[{"0":"success","1":"EVGO JAN 15 2027 $7 CALL","6":"-EVGO270115C7.GK","120":"EVGO INC JAN 15 2027 $7 CALL","128":"OP","169":"realtime","182":"100","184":"7","185":"EVGO","187":"0.0863","188":"0.12568","189":"0.00236","190":"-0.00033","191":"0.00083","193":"0.0361","195":"1.55945","196":"1.25337","197":"C","199":"2027-01-15","290":"0.8291","302":"EVGO"}],"Delay":"8.812943ms","Request":"0ba9bd91"}'
 
 ERROR_MSG = '{"Command":"subscribe","ResponseType":"-1","ErrorCode":"18","Data":[{"0":"Source not found","6":"-SPXW260217P6750"}],"Delay":"917.238µs","Request":"0ba9bd91"}'
+
+STREAMING_UPDATE_MSG = '{"ResponseType":"0","Data":[{"6":"AAPL","124":"195.50","20":"195.40","31":"195.60","128":"EQ","1159":"195.45","1160":"300","1161":"14:30:05","1162":"XNGS","1163":"@","1164":"U","1165":"12345678"}]}'
 
 
 # ---------------------------------------------------------------------------
@@ -598,3 +601,88 @@ class TestFieldMapCoverage:
             assert isinstance(v, str), f"Expected str, got {type(v)} for value {v!r}"
         for v in OPTION_FIELDS.values():
             assert isinstance(v, str), f"Expected str, got {type(v)} for value {v!r}"
+
+    def test_all_fields_includes_time_sales(self):
+        for k in TIME_SALES_FIELDS:
+            assert k in ALL_FIELDS
+
+    def test_time_sales_field_names(self):
+        assert TIME_SALES_FIELDS["1159"] == "last_trade_price"
+        assert TIME_SALES_FIELDS["1160"] == "last_trade_size"
+        assert TIME_SALES_FIELDS["1161"] == "last_trade_time"
+        assert TIME_SALES_FIELDS["1162"] == "last_trade_exchange"
+        assert TIME_SALES_FIELDS["1163"] == "last_trade_condition"
+        assert TIME_SALES_FIELDS["1164"] == "last_trade_tick"
+        assert TIME_SALES_FIELDS["1165"] == "last_trade_sequence"
+
+
+# ---------------------------------------------------------------------------
+# Time & Sales field parsing tests
+# ---------------------------------------------------------------------------
+
+class TestTimeSalesFields:
+    def test_parse_fields_includes_ts_with_auto_detect(self):
+        raw = {"6": "AAPL", "124": "195.50", "128": "EQ", "1159": "195.45", "1160": "300"}
+        result = parse_fields(raw)
+        assert result["last_trade_price"] == "195.45"
+        assert result["last_trade_size"] == "300"
+
+    def test_parse_fields_ts_not_prefixed_as_unknown(self):
+        raw = {"6": "AAPL", "1159": "195.45", "1161": "14:30:05"}
+        result = parse_fields(raw)
+        assert "field_1159" not in result
+        assert "field_1161" not in result
+        assert result["last_trade_price"] == "195.45"
+        assert result["last_trade_time"] == "14:30:05"
+
+
+# ---------------------------------------------------------------------------
+# Streaming update (ResponseType "0") tests
+# ---------------------------------------------------------------------------
+
+class TestStreamingUpdates:
+    def test_response_type_0_returns_quotes(self):
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        quotes = client.parse_message(STREAMING_UPDATE_MSG)
+        assert len(quotes) == 1
+
+    def test_response_type_0_parses_symbol(self):
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        quotes = client.parse_message(STREAMING_UPDATE_MSG)
+        assert quotes[0].symbol == "AAPL"
+
+    def test_response_type_0_has_trade_data(self):
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        quotes = client.parse_message(STREAMING_UPDATE_MSG)
+        q = quotes[0]
+        assert q.has_trade_data is True
+        assert q.last_trade_price == pytest.approx(195.45)
+        assert q.last_trade_size == 300
+        assert q.last_trade_time == "14:30:05"
+        assert q.last_trade_exchange == "XNGS"
+
+    def test_response_type_0_no_success_check(self):
+        """Streaming updates don't have status field '0' = 'success'."""
+        msg = json.dumps({
+            "ResponseType": "0",
+            "Data": [{"6": "TSLA", "124": "250.00", "128": "EQ"}],
+        })
+        client = MDDSClient()
+        quotes = client.parse_message(msg)
+        assert len(quotes) == 1
+        assert quotes[0].symbol == "TSLA"
+
+    def test_has_trade_data_false_when_no_ts_fields(self):
+        q = MDDSQuote(symbol="TEST", data={"last_price": "100"})
+        assert q.has_trade_data is False
+
+    def test_last_trade_time_none_when_missing(self):
+        q = MDDSQuote(symbol="TEST", data={})
+        assert q.last_trade_time is None
+
+    def test_last_trade_exchange_none_when_missing(self):
+        q = MDDSQuote(symbol="TEST", data={})
+        assert q.last_trade_exchange is None
