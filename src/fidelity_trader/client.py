@@ -14,6 +14,10 @@ from fidelity_trader.research.data import ResearchAPI
 from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
 from fidelity_trader.watchlists.watchlists import WatchlistAPI
+from fidelity_trader.portfolio.accounts import AccountsAPI
+from fidelity_trader.market_data.fastquote import FastQuoteAPI
+from fidelity_trader.research.analytics import OptionAnalyticsAPI
+from fidelity_trader.alerts.subscription import AlertsAPI
 
 
 class FidelityClient:
@@ -45,6 +49,10 @@ class FidelityClient:
         self.search = SearchAPI(self._http)
         self.streaming = StreamingNewsAPI(self._http)
         self.watchlists = WatchlistAPI(self._http)
+        self.accounts = AccountsAPI(self._http)
+        self.option_chain = FastQuoteAPI(self._http)
+        self.option_analytics = OptionAnalyticsAPI(self._http)
+        self.alerts = AlertsAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.
