@@ -58,8 +58,23 @@ class FidelityClient:
         """Authenticate with Fidelity and establish a session.
 
         If totp_secret is provided, generates and submits a TOTP code for 2FA.
+        After login, initializes the security context (required for real-time
+        quote access on fastquote.fidelity.com).
         """
-        return self._auth.login(username, password, totp_secret=totp_secret)
+        result = self._auth.login(username, password, totp_secret=totp_secret)
+
+        # Initialize security context — required for real-time quote
+        # entitlements on fastquote.fidelity.com (without this, montage
+        # returns "Delayed quotes not supported")
+        try:
+            self._http.post(
+                f"{BASE_URL}/ftgw/digital/pico/api/v1/context/security",
+                json={},
+            )
+        except Exception:
+            pass  # Non-fatal — quotes still work, just may be delayed
+
+        return result
 
     def logout(self) -> None:
         """Clear the current session."""
