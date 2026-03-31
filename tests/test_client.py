@@ -12,8 +12,13 @@ from fidelity_trader.portfolio.balances import BalancesAPI
 from fidelity_trader.portfolio.option_summary import OptionSummaryAPI
 from fidelity_trader.portfolio.transactions import TransactionsAPI
 from fidelity_trader.orders.status import OrderStatusAPI
+from fidelity_trader.orders.equity import EquityOrderAPI
+from fidelity_trader.orders.options import MultiLegOptionOrderAPI
+from fidelity_trader.orders.cancel import OrderCancelAPI
 from fidelity_trader.research.data import ResearchAPI
+from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
+from fidelity_trader.watchlists.watchlists import WatchlistAPI
 from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
@@ -28,9 +33,14 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.balances, BalancesAPI)
         assert isinstance(client.option_summary, OptionSummaryAPI)
         assert isinstance(client.transactions, TransactionsAPI)
-        assert isinstance(client.orders, OrderStatusAPI)
+        assert isinstance(client.order_status, OrderStatusAPI)
+        assert isinstance(client.equity_orders, EquityOrderAPI)
+        assert isinstance(client.option_orders, MultiLegOptionOrderAPI)
+        assert isinstance(client.cancel_order, OrderCancelAPI)
         assert isinstance(client.research, ResearchAPI)
+        assert isinstance(client.search, SearchAPI)
         assert isinstance(client.streaming, StreamingNewsAPI)
+        assert isinstance(client.watchlists, WatchlistAPI)
     finally:
         client.close()
 
@@ -43,9 +53,14 @@ def test_all_modules_share_same_http_client():
         assert client.balances._http is http
         assert client.option_summary._http is http
         assert client.transactions._http is http
-        assert client.orders._http is http
+        assert client.order_status._http is http
+        assert client.equity_orders._http is http
+        assert client.option_orders._http is http
+        assert client.cancel_order._http is http
         assert client.research._http is http
+        assert client.search._http is http
         assert client.streaming._http is http
+        assert client.watchlists._http is http
     finally:
         client.close()
 

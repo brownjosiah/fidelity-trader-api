@@ -7,8 +7,13 @@ from fidelity_trader.portfolio.balances import BalancesAPI
 from fidelity_trader.portfolio.option_summary import OptionSummaryAPI
 from fidelity_trader.portfolio.transactions import TransactionsAPI
 from fidelity_trader.orders.status import OrderStatusAPI
+from fidelity_trader.orders.equity import EquityOrderAPI
+from fidelity_trader.orders.options import MultiLegOptionOrderAPI
+from fidelity_trader.orders.cancel import OrderCancelAPI
 from fidelity_trader.research.data import ResearchAPI
+from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
+from fidelity_trader.watchlists.watchlists import WatchlistAPI
 
 
 class FidelityClient:
@@ -32,9 +37,14 @@ class FidelityClient:
         self.balances = BalancesAPI(self._http)
         self.option_summary = OptionSummaryAPI(self._http)
         self.transactions = TransactionsAPI(self._http)
-        self.orders = OrderStatusAPI(self._http)
+        self.order_status = OrderStatusAPI(self._http)
+        self.equity_orders = EquityOrderAPI(self._http)
+        self.option_orders = MultiLegOptionOrderAPI(self._http)
+        self.cancel_order = OrderCancelAPI(self._http)
         self.research = ResearchAPI(self._http)
+        self.search = SearchAPI(self._http)
         self.streaming = StreamingNewsAPI(self._http)
+        self.watchlists = WatchlistAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.
