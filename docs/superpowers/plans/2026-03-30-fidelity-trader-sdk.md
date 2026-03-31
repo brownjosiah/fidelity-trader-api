@@ -1921,42 +1921,176 @@ git commit -m "docs: update CLAUDE.md with complete API surface reference"
 
 ---
 
+## Completed Tasks (from captured traffic)
+
+| Task | Module | Endpoint | Status |
+|------|--------|----------|--------|
+| Shared HTTP Layer | `_http.py`, `exceptions.py` | — | DONE |
+| Pydantic Models (auth) | `models/auth.py` | — | DONE |
+| CSRF Token Management | `auth/session.py` | — | DONE |
+| 2FA/TOTP Login | `auth/session.py` | `ecaap/user/factor/totp/authentication` | DONE |
+| Credentials Providers | `credentials.py` | AWS Secrets Manager, SSM, env, file | DONE |
+| Positions API | `portfolio/positions.py` | `dpservice/ftgw/dp/position/v2` | DONE |
+| Balances API | `portfolio/balances.py` | `dpservice/ftgw/dp/balance/detail/v2` | DONE |
+| Order Status API | `orders/status.py` | `dpservice/ftgw/dp/retail-order-status/v3/...` | DONE |
+| Option Summary API | `portfolio/option_summary.py` | `dpservice/ftgw/dp/retail-am-optionsummary/...` | DONE |
+| Transaction History | `portfolio/transactions.py` | `dpservice/ftgw/dp/accountmanagement/transaction/history/v2` | DONE |
+| Research (Earnings/Dividends) | `research/data.py` | `dpservice/ftgw/dpdirect/research/earning+dividend/v1` | DONE |
+| Streaming News Auth | `streaming/news.py` | `streaming-news.mds.fidelity.com/ftgw/snaz/Authorize` | DONE |
+| FidelityClient Composition | `client.py` | — | DONE |
+
+---
+
+## MDDS WebSocket Streaming — Task Block
+
+Discovered from captured traffic: Fidelity Trader+ gets ALL real-time market data through WebSocket connections to `mdds-i-tc.fidelity.com`. This is not a REST API — it's a persistent streaming protocol. See `docs/captures/2026-03-30-websocket-streaming.md` for full protocol documentation.
+
+### Streaming Task S1: Market-Hours Capture (REQUIRES USER)
+
+**Capture during market hours** to see real tick data flowing with bid/ask/last/volume/Greeks.
+Weekend captures only show initial subscription responses, not live ticks.
+
+- [ ] Step 1: Enable mitmproxy during market hours (Mon-Fri 9:30-16:00 ET)
+- [ ] Step 2: User opens Trader+ and watches a few symbols (SPX, AAPL, etc.)
+- [ ] Step 3: Capture for 2-3 minutes to collect streaming tick data
+- [ ] Step 4: Run `ws_dump.py` to extract messages
+- [ ] Step 5: Document all field numbers with their meanings
+
+### Streaming Task S2: Build MDDS Field Mapping
+
+**Files:**
+- Create: `src/fidelity_trader/streaming/mdds_fields.py`
+- Create: `tests/test_mdds_fields.py`
+
+Map all numbered field IDs to human-readable names. Known so far:
+```python
+MDDS_FIELDS = {
+    "0": "status",
+    "1": "security_name",
+    "10": "symbol_root",
+    "11": "symbol_display",
+    "12": "price_change",
+    "13": "price_change_pct",
+    "14": "fifty_two_week_high",
+    "15": "fifty_two_week_high_date",
+    "16": "fifty_two_week_low",
+    "17": "fifty_two_week_low_date",
+    "124": "last_price",
+    "128": "security_type_code",
+    "169": "data_quality",  # "realtime" or "delayed"
+    # TODO: bid, ask, bid_size, ask_size, volume, open, close, Greeks...
+}
+```
+
+- [ ] Step 1: Write field mapping module from market-hours capture data
+- [ ] Step 2: Write tests validating field parsing
+- [ ] Step 3: Commit
+
+### Streaming Task S3: Build MDDS WebSocket Client
+
+**Files:**
+- Create: `src/fidelity_trader/streaming/mdds.py`
+- Create: `tests/test_mdds.py`
+
+Async WebSocket client using `websockets` library:
+
+```python
+class MDDSClient:
+    """Real-time market data streaming via Fidelity MDDS WebSocket."""
+
+    async def connect(self, cookies: dict) -> None:
+        """Connect to mdds-i-tc.fidelity.com with session cookies."""
+
+    async def subscribe(self, symbols: list[str], include_greeks: bool = False, conflation_ms: int = 1000) -> None:
+        """Subscribe to real-time data for symbols."""
+
+    async def unsubscribe(self, symbols: list[str]) -> None:
+        """Unsubscribe from symbols."""
+
+    async def stream(self) -> AsyncIterator[Quote]:
+        """Yield parsed quote updates as they arrive."""
+
+    async def close(self) -> None:
+        """Disconnect."""
+```
+
+- [ ] Step 1: Write failing tests for MDDSClient (connect, subscribe, stream)
+- [ ] Step 2: Implement MDDSClient with websockets library
+- [ ] Step 3: Handle multi-connection architecture (split symbols across connections)
+- [ ] Step 4: Parse numbered field data into pydantic Quote models using field mapping
+- [ ] Step 5: Run tests, commit
+
+### Streaming Task S4: Build Streaming Quote API
+
+**Files:**
+- Create: `src/fidelity_trader/streaming/quotes.py`
+- Modify: `src/fidelity_trader/client.py` (add async streaming support)
+
+High-level API wrapping the MDDS client:
+
+```python
+class StreamingQuotesAPI:
+    """Real-time streaming quotes via MDDS WebSocket."""
+
+    async def watch(self, symbols: list[str], include_greeks: bool = False) -> AsyncIterator[QuoteUpdate]:
+        """Stream real-time quote updates for symbols."""
+
+    async def get_snapshot(self, symbols: list[str]) -> dict[str, Quote]:
+        """Subscribe, get one snapshot, unsubscribe."""
+```
+
+- [ ] Step 1: Write tests
+- [ ] Step 2: Implement StreamingQuotesAPI
+- [ ] Step 3: Wire into FidelityClient as `client.streaming_quotes`
+- [ ] Step 4: Write example script
+- [ ] Step 5: Commit
+
+### Streaming Task S5: News WebSocket Client
+
+**Files:**
+- Create: `src/fidelity_trader/streaming/news_feed.py`
+
+Connect to `fid-str.newsedge.net:443` using the AccessToken from the Authorize endpoint. Requires a capture of the actual news WebSocket to map the message format.
+
+- [ ] Step 1: Capture news WebSocket traffic (user watches news in Trader+)
+- [ ] Step 2: Document message format
+- [ ] Step 3: Implement NewsFeedClient
+- [ ] Step 4: Commit
+
+---
+
 ## Future Tasks (require additional mitmproxy captures)
 
-These tasks cannot be fully implemented until the corresponding traffic is captured from Fidelity Trader+. Each requires a capture session:
+These tasks cannot be implemented until the corresponding traffic is captured from Fidelity Trader+:
 
 ### Task F1: Order Placement Flow
-- Capture: Place a test order in Fidelity Trader+ with mitmproxy running
-- Expected endpoints: order-preview, order-submit
+- Capture: Preview an order in Fidelity Trader+ with mitmproxy running (don't submit)
 - Build: `TradingAPI.preview_order()`, `TradingAPI.submit_order()`
 
 ### Task F2: Order Modification & Cancellation
 - Capture: Modify and cancel an open order
-- Expected endpoints: order-modify, order-cancel
 - Build: `TradingAPI.modify_order()`, `TradingAPI.cancel_order()`
 
-### Task F3: Order History & Status
-- Capture: View order history page
-- Expected endpoints: order-status, order-history
-- Build: `TradingAPI.get_order_status()`, `TradingAPI.get_order_history()`
-
-### Task F4: Watchlists
+### Task F3: Watchlists
 - Capture: Create, edit, delete watchlists
 - Build: `WatchlistsAPI` module
 
-### Task F5: Alerts
+### Task F4: Alerts
 - Capture: Create, manage price/volume alerts
 - Build: `AlertsAPI` module
 
-### Task F6: Streaming / WebSocket Data
-- Capture: Monitor for WebSocket connections during real-time quote viewing
-- Build: `StreamingAPI` with async support if WebSocket feeds exist
+### Task F5: Options Chain Lookup
+- Capture: Open an options chain in Trader+
+- Build: `OptionsAPI.get_chain()`, `OptionsAPI.get_expirations()`
 
-### Task F7: Equity Trading (non-options)
-- Capture: Place equity orders via different endpoint path
-- Expected: `/ftgw/digital/trade-equity/` endpoints
-- Build: Extend `TradingAPI` or create `EquityTradingAPI`
+### Task F6: Equity Trading
+- Capture: Place equity order (different from options flow)
+- Build: `EquityTradingAPI`
 
-### Task F8: Statements & Documents
+### Task F7: Statements & Documents
 - Capture: Download statements, tax documents
 - Build: `DocumentsAPI` module
+
+### Task F8: Closed Positions Detail
+- Endpoint already captured: `dpservice/ftgw/dp/customer-am-position/v1/accounts/closedposition`
+- Build: `PortfolioAPI.get_closed_positions()` — can implement now, just needs response analysis
