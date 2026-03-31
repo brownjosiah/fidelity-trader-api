@@ -26,6 +26,7 @@ REQUEST_HEADERS = {
 # Data/Trading API host (from captured traffic)
 DPSERVICE_URL = "https://dpservice.fidelity.com"
 STREAMING_NEWS_URL = "https://streaming-news.mds.fidelity.com"
+FASTQUOTE_URL = "https://fastquote.fidelity.com"
 
 # Headers used by Fidelity Trader+ desktop app for data APIs
 # (different from login headers which use RETAIL-CC-LOGIN-SDK)
