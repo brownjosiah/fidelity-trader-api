@@ -6,6 +6,7 @@ from fidelity_trader.streaming.mdds_fields import (
     EQUITY_FIELDS,
     OPTION_FIELDS,
     TIME_SALES_FIELDS,
+    VIRTUALBOOK_FIELDS,
     ALL_FIELDS,
     parse_fields,
 )
@@ -13,6 +14,8 @@ from fidelity_trader.streaming.mdds import (
     MDDSClient,
     MDDSQuote,
     MDDSSession,
+    BookLevel,
+    VirtualBook,
     MDDS_URL,
 )
 
@@ -686,3 +689,553 @@ class TestStreamingUpdates:
     def test_last_trade_exchange_none_when_missing(self):
         q = MDDSQuote(symbol="TEST", data={})
         assert q.last_trade_exchange is None
+
+
+# ---------------------------------------------------------------------------
+# Virtual Book (L2 depth) fixtures
+# ---------------------------------------------------------------------------
+
+VB_STREAMING_UPDATE_MSG = json.dumps({
+    "Command": "subscribe_virtualbook",
+    "ResponseType": "0",
+    "Data": [{
+        "462": "646.4100", "463": "646.4100", "464": "646.4100",
+        "465": "646.4000", "466": "646.4000", "467": "646.4000",
+        "487": "XNYS", "488": "XNMS", "489": "ARCX",
+        "512": "120", "513": "240", "514": "280",
+        "537": "646.4400", "538": "646.4400",
+        "562": "BATS", "563": "ARCX",
+        "587": "215", "588": "120",
+        "891": "17:56:51.456", "892": "17:56:51.457",
+        "916": "17:56:51.456", "917": "17:56:51.457",
+        "6": "SPY.VB",
+    }],
+})
+
+VB_INITIAL_SNAPSHOT_MSG = json.dumps({
+    "Command": "subscribe_virtualbook",
+    "ResponseType": "1",
+    "Data": [{
+        "0": "success",
+        "6": "SPY.VB",
+        "462": "646.4100", "463": "646.4000",
+        "487": "XNYS", "488": "XNMS",
+        "512": "120", "513": "240",
+        "537": "646.4400", "538": "646.4500",
+        "562": "BATS", "563": "ARCX",
+        "587": "215", "588": "120",
+        "891": "17:56:51.456",
+        "916": "17:56:51.456",
+    }],
+})
+
+VB_ERROR_MSG = json.dumps({
+    "Command": "subscribe_virtualbook",
+    "ResponseType": "-1",
+    "ErrorCode": "18",
+    "Data": [{"0": "Source not found", "6": "INVALID.VB"}],
+})
+
+
+# ---------------------------------------------------------------------------
+# VIRTUALBOOK_FIELDS mapping tests
+# ---------------------------------------------------------------------------
+
+class TestVirtualBookFields:
+    def test_field_count_is_200(self):
+        """25 levels * 4 attributes (price/exchange/size/time) * 2 sides = 200."""
+        assert len(VIRTUALBOOK_FIELDS) == 200
+
+    def test_bid_price_range(self):
+        for i in range(25):
+            assert str(462 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(462 + i)] == f"bid_price_{i}"
+
+    def test_bid_exchange_range(self):
+        for i in range(25):
+            assert str(487 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(487 + i)] == f"bid_exchange_{i}"
+
+    def test_bid_size_range(self):
+        for i in range(25):
+            assert str(512 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(512 + i)] == f"bid_size_{i}"
+
+    def test_ask_price_range(self):
+        for i in range(25):
+            assert str(537 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(537 + i)] == f"ask_price_{i}"
+
+    def test_ask_exchange_range(self):
+        for i in range(25):
+            assert str(562 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(562 + i)] == f"ask_exchange_{i}"
+
+    def test_ask_size_range(self):
+        for i in range(25):
+            assert str(587 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(587 + i)] == f"ask_size_{i}"
+
+    def test_bid_time_range(self):
+        for i in range(25):
+            assert str(891 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(891 + i)] == f"bid_time_{i}"
+
+    def test_ask_time_range(self):
+        for i in range(25):
+            assert str(916 + i) in VIRTUALBOOK_FIELDS
+            assert VIRTUALBOOK_FIELDS[str(916 + i)] == f"ask_time_{i}"
+
+    def test_all_fields_includes_virtualbook(self):
+        for k in VIRTUALBOOK_FIELDS:
+            assert k in ALL_FIELDS
+
+    def test_field_values_are_strings(self):
+        for v in VIRTUALBOOK_FIELDS.values():
+            assert isinstance(v, str)
+
+    def test_parse_fields_auto_detects_virtualbook(self):
+        raw = {"462": "100.50", "537": "100.60", "6": "SPY.VB"}
+        result = parse_fields(raw)
+        assert result.get("bid_price_0") == "100.50"
+        assert result.get("ask_price_0") == "100.60"
+        assert result.get("symbol") == "SPY.VB"
+
+    def test_parse_fields_virtualbook_no_unknown_prefix(self):
+        raw = {"462": "100.50", "512": "120", "891": "10:00:00.123"}
+        result = parse_fields(raw)
+        assert "field_462" not in result
+        assert "field_512" not in result
+        assert "field_891" not in result
+        assert result["bid_price_0"] == "100.50"
+        assert result["bid_size_0"] == "120"
+        assert result["bid_time_0"] == "10:00:00.123"
+
+
+# ---------------------------------------------------------------------------
+# BookLevel dataclass tests
+# ---------------------------------------------------------------------------
+
+class TestBookLevel:
+    def test_default_values(self):
+        level = BookLevel()
+        assert level.price is None
+        assert level.size is None
+        assert level.exchange is None
+        assert level.timestamp is None
+
+    def test_full_level(self):
+        level = BookLevel(price=646.41, size=120, exchange="XNYS", timestamp="17:56:51.456")
+        assert level.price == pytest.approx(646.41)
+        assert level.size == 120
+        assert level.exchange == "XNYS"
+        assert level.timestamp == "17:56:51.456"
+
+    def test_partial_level(self):
+        level = BookLevel(price=100.0, size=50)
+        assert level.price == pytest.approx(100.0)
+        assert level.size == 50
+        assert level.exchange is None
+        assert level.timestamp is None
+
+
+# ---------------------------------------------------------------------------
+# VirtualBook dataclass tests
+# ---------------------------------------------------------------------------
+
+class TestVirtualBook:
+    def test_from_fields_builds_25_bid_levels(self):
+        data = {f"bid_price_{i}": str(100.0 - i) for i in range(25)}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert len(vb.bids) == 25
+
+    def test_from_fields_builds_25_ask_levels(self):
+        data = {f"ask_price_{i}": str(100.5 + i) for i in range(25)}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert len(vb.asks) == 25
+
+    def test_from_fields_bid_prices(self):
+        data = {"bid_price_0": "646.4100", "bid_price_1": "646.4000"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.bids[0].price == pytest.approx(646.41)
+        assert vb.bids[1].price == pytest.approx(646.40)
+
+    def test_from_fields_ask_prices(self):
+        data = {"ask_price_0": "646.4400", "ask_price_1": "646.4500"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.asks[0].price == pytest.approx(646.44)
+        assert vb.asks[1].price == pytest.approx(646.45)
+
+    def test_from_fields_sizes_converted_to_int(self):
+        data = {"bid_size_0": "120", "ask_size_0": "215"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.bids[0].size == 120
+        assert vb.asks[0].size == 215
+
+    def test_from_fields_exchanges(self):
+        data = {"bid_exchange_0": "XNYS", "ask_exchange_0": "BATS"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.bids[0].exchange == "XNYS"
+        assert vb.asks[0].exchange == "BATS"
+
+    def test_from_fields_timestamps(self):
+        data = {"bid_time_0": "17:56:51.456", "ask_time_0": "17:56:51.456"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.bids[0].timestamp == "17:56:51.456"
+        assert vb.asks[0].timestamp == "17:56:51.456"
+
+    def test_from_fields_missing_levels_are_none(self):
+        data = {"bid_price_0": "100.00"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.bids[0].price == pytest.approx(100.0)
+        assert vb.bids[1].price is None
+        assert vb.bids[0].size is None
+        assert vb.asks[0].price is None
+
+    def test_from_fields_preserves_raw(self):
+        raw = {"462": "100.00", "6": "SPY.VB"}
+        vb = VirtualBook.from_fields("SPY", {}, raw)
+        assert vb.raw == raw
+
+    def test_symbol_set_correctly(self):
+        vb = VirtualBook.from_fields("SPY", {}, {})
+        assert vb.symbol == "SPY"
+
+    def test_best_bid(self):
+        data = {"bid_price_0": "646.41", "bid_size_0": "120", "bid_exchange_0": "XNYS"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        bb = vb.best_bid
+        assert bb is not None
+        assert bb.price == pytest.approx(646.41)
+        assert bb.size == 120
+        assert bb.exchange == "XNYS"
+
+    def test_best_ask(self):
+        data = {"ask_price_0": "646.44", "ask_size_0": "215", "ask_exchange_0": "BATS"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        ba = vb.best_ask
+        assert ba is not None
+        assert ba.price == pytest.approx(646.44)
+        assert ba.size == 215
+        assert ba.exchange == "BATS"
+
+    def test_best_bid_none_when_empty(self):
+        vb = VirtualBook.from_fields("SPY", {}, {})
+        assert vb.best_bid is None
+
+    def test_best_ask_none_when_empty(self):
+        vb = VirtualBook.from_fields("SPY", {}, {})
+        assert vb.best_ask is None
+
+    def test_spread(self):
+        data = {"bid_price_0": "646.4100", "ask_price_0": "646.4400"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.spread == pytest.approx(0.03)
+
+    def test_spread_none_when_no_best_bid(self):
+        data = {"ask_price_0": "646.44"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.spread is None
+
+    def test_spread_none_when_no_best_ask(self):
+        data = {"bid_price_0": "646.41"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.spread is None
+
+    def test_mid_price(self):
+        data = {"bid_price_0": "646.4100", "ask_price_0": "646.4400"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.mid_price == pytest.approx(646.425)
+
+    def test_mid_price_none_when_no_bid(self):
+        data = {"ask_price_0": "646.44"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.mid_price is None
+
+    def test_mid_price_none_when_no_ask(self):
+        data = {"bid_price_0": "646.41"}
+        vb = VirtualBook.from_fields("SPY", data, {})
+        assert vb.mid_price is None
+
+    def test_empty_book(self):
+        vb = VirtualBook.from_fields("SPY", {}, {})
+        assert vb.best_bid is None
+        assert vb.best_ask is None
+        assert vb.spread is None
+        assert vb.mid_price is None
+        assert len(vb.bids) == 25
+        assert len(vb.asks) == 25
+
+
+# ---------------------------------------------------------------------------
+# MDDSClient virtualbook subscribe/unsubscribe tests
+# ---------------------------------------------------------------------------
+
+class TestBuildVirtualBookSubscribe:
+    def _client_with_session(self) -> MDDSClient:
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        return client
+
+    def test_command_is_subscribe_virtualbook(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert msg["Command"] == "subscribe_virtualbook"
+
+    def test_symbol_is_single_string(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert msg["Symbol"] == "SPY"
+
+    def test_session_id_included(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert msg["SessionId"] == "a21af247-1f51-4ad4-a8ed-a16df58a352e"
+
+    def test_default_conflation_rate(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert msg["ConflationRate"] == 1000
+
+    def test_custom_conflation_rate(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY", conflation_rate=500))
+        assert msg["ConflationRate"] == 500
+
+    def test_include_arca_only_true_by_default(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert msg["IncludeArcaOnly"] is True
+
+    def test_include_arca_only_false(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY", include_arca_only=False))
+        assert msg["IncludeArcaOnly"] is False
+
+    def test_returns_valid_json_string(self):
+        client = self._client_with_session()
+        raw = client.build_virtualbook_subscribe("SPY")
+        assert isinstance(raw, str)
+        parsed = json.loads(raw)
+        assert isinstance(parsed, dict)
+
+    def test_no_include_greeks_key(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert "IncludeGreeks" not in msg
+
+
+class TestBuildVirtualBookUnsubscribe:
+    def _client_with_session(self) -> MDDSClient:
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        return client
+
+    def test_command_is_unsubscribe_virtualbook(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_unsubscribe("SPY"))
+        assert msg["Command"] == "unsubscribe_virtualbook"
+
+    def test_symbol_included(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_unsubscribe("SPY"))
+        assert msg["Symbol"] == "SPY"
+
+    def test_session_id_included(self):
+        client = self._client_with_session()
+        msg = json.loads(client.build_virtualbook_unsubscribe("SPY"))
+        assert msg["SessionId"] == "a21af247-1f51-4ad4-a8ed-a16df58a352e"
+
+    def test_returns_valid_json_string(self):
+        client = self._client_with_session()
+        raw = client.build_virtualbook_unsubscribe("QQQ")
+        assert isinstance(raw, str)
+        json.loads(raw)  # should not raise
+
+
+# ---------------------------------------------------------------------------
+# parse_message with virtualbook data tests
+# ---------------------------------------------------------------------------
+
+class TestParseMessageVirtualBook:
+    def test_streaming_update_returns_virtualbook(self):
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        assert len(results) == 1
+        assert isinstance(results[0], VirtualBook)
+
+    def test_streaming_update_symbol_stripped(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        assert results[0].symbol == "SPY"
+
+    def test_streaming_update_bid_prices(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.bids[0].price == pytest.approx(646.41)
+        assert vb.bids[1].price == pytest.approx(646.41)
+        assert vb.bids[2].price == pytest.approx(646.41)
+        assert vb.bids[3].price == pytest.approx(646.40)
+
+    def test_streaming_update_ask_prices(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.asks[0].price == pytest.approx(646.44)
+        assert vb.asks[1].price == pytest.approx(646.44)
+
+    def test_streaming_update_bid_exchanges(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.bids[0].exchange == "XNYS"
+        assert vb.bids[1].exchange == "XNMS"
+        assert vb.bids[2].exchange == "ARCX"
+
+    def test_streaming_update_sizes(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.bids[0].size == 120
+        assert vb.bids[1].size == 240
+        assert vb.asks[0].size == 215
+
+    def test_streaming_update_timestamps(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.bids[0].timestamp == "17:56:51.456"
+        assert vb.asks[0].timestamp == "17:56:51.456"
+
+    def test_streaming_update_spread(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.spread == pytest.approx(0.03)
+
+    def test_streaming_update_mid_price(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.mid_price == pytest.approx(646.425)
+
+    def test_initial_snapshot_returns_virtualbook(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_INITIAL_SNAPSHOT_MSG)
+        assert len(results) == 1
+        assert isinstance(results[0], VirtualBook)
+
+    def test_initial_snapshot_symbol_stripped(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_INITIAL_SNAPSHOT_MSG)
+        assert results[0].symbol == "SPY"
+
+    def test_initial_snapshot_bid_data(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_INITIAL_SNAPSHOT_MSG)
+        vb = results[0]
+        assert vb.bids[0].price == pytest.approx(646.41)
+        assert vb.bids[0].exchange == "XNYS"
+        assert vb.bids[0].size == 120
+
+    def test_initial_snapshot_ask_data(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_INITIAL_SNAPSHOT_MSG)
+        vb = results[0]
+        assert vb.asks[0].price == pytest.approx(646.44)
+        assert vb.asks[0].exchange == "BATS"
+        assert vb.asks[0].size == 215
+
+    def test_error_response_returns_empty(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_ERROR_MSG)
+        assert results == []
+
+    def test_partial_update_unfilled_levels_none(self):
+        """A streaming update with only a few levels populated."""
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        # Level 24 should have no data
+        assert vb.bids[24].price is None
+        assert vb.bids[24].size is None
+        assert vb.bids[24].exchange is None
+        assert vb.asks[24].price is None
+
+    def test_raw_data_preserved(self):
+        client = MDDSClient()
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        vb = results[0]
+        assert vb.raw["462"] == "646.4100"
+        assert vb.raw["6"] == "SPY.VB"
+
+    def test_regular_subscribe_still_returns_mdds_quote(self):
+        """Ensure backwards compatibility: regular subscribe still returns MDDSQuote."""
+        client = MDDSClient()
+        client.handle_connect_message(CONNECT_MSG)
+        quotes = client.parse_message(SUCCESS_MSG)
+        assert len(quotes) == 1
+        assert isinstance(quotes[0], MDDSQuote)
+        assert quotes[0].symbol == "RKLB"
+
+    def test_regular_streaming_still_returns_mdds_quote(self):
+        """Ensure backwards compatibility: regular streaming update returns MDDSQuote."""
+        client = MDDSClient()
+        quotes = client.parse_message(STREAMING_UPDATE_MSG)
+        assert len(quotes) == 1
+        assert isinstance(quotes[0], MDDSQuote)
+        assert quotes[0].symbol == "AAPL"
+
+    def test_symbol_without_vb_suffix_unchanged(self):
+        """If symbol doesn't have .VB suffix, it passes through unchanged."""
+        msg = json.dumps({
+            "Command": "subscribe_virtualbook",
+            "ResponseType": "0",
+            "Data": [{"462": "100.00", "6": "SPY"}],
+        })
+        client = MDDSClient()
+        results = client.parse_message(msg)
+        assert results[0].symbol == "SPY"
+
+
+# ---------------------------------------------------------------------------
+# Virtual Book round-trip tests
+# ---------------------------------------------------------------------------
+
+class TestVirtualBookRoundTrip:
+    def test_connect_subscribe_parse_virtualbook(self):
+        client = MDDSClient()
+
+        # Step 1: Handle connection
+        session = client.handle_connect_message(CONNECT_MSG)
+        assert session.connected is True
+
+        # Step 2: Build subscribe message
+        sub_msg = json.loads(client.build_virtualbook_subscribe("SPY"))
+        assert sub_msg["Command"] == "subscribe_virtualbook"
+        assert sub_msg["Symbol"] == "SPY"
+        assert sub_msg["IncludeArcaOnly"] is True
+        assert sub_msg["SessionId"] == session.session_id
+
+        # Step 3: Parse initial snapshot
+        results = client.parse_message(VB_INITIAL_SNAPSHOT_MSG)
+        assert len(results) == 1
+        vb = results[0]
+        assert isinstance(vb, VirtualBook)
+        assert vb.symbol == "SPY"
+        assert vb.best_bid.price == pytest.approx(646.41)
+        assert vb.best_ask.price == pytest.approx(646.44)
+
+        # Step 4: Parse streaming update
+        results = client.parse_message(VB_STREAMING_UPDATE_MSG)
+        assert len(results) == 1
+        vb = results[0]
+        assert isinstance(vb, VirtualBook)
+        assert vb.spread == pytest.approx(0.03)
+
+        # Step 5: Unsubscribe
+        unsub = json.loads(client.build_virtualbook_unsubscribe("SPY"))
+        assert unsub["Command"] == "unsubscribe_virtualbook"
+        assert unsub["Symbol"] == "SPY"

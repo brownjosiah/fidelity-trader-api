@@ -6,9 +6,14 @@ Uses the session cookies from login for authentication.
 
 import json
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
-from fidelity_trader.streaming.mdds_fields import parse_fields, OPTION_FIELDS, EQUITY_FIELDS
+from fidelity_trader.streaming.mdds_fields import (
+    parse_fields,
+    OPTION_FIELDS,
+    EQUITY_FIELDS,
+    VIRTUALBOOK_FIELDS,
+)
 
 
 MDDS_URL = "wss://mdds-i-tc.fidelity.com/?productid=atn"
@@ -77,6 +82,91 @@ class MDDSQuote:
     @property
     def has_trade_data(self) -> bool:
         return self.last_trade_price is not None
+
+
+def _to_float(v: Optional[str]) -> Optional[float]:
+    """Convert a string to float, returning None for missing/empty values."""
+    if v is None or v == "":
+        return None
+    return float(v)
+
+
+def _to_int(v: Optional[str]) -> Optional[int]:
+    """Convert a string to int, returning None for missing/empty values."""
+    if v is None or v == "":
+        return None
+    return int(v)
+
+
+@dataclass
+class BookLevel:
+    """A single price level in the L2 order book."""
+    price: Optional[float] = None
+    size: Optional[int] = None
+    exchange: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+@dataclass
+class VirtualBook:
+    """A parsed L2 depth-of-book update from the MDDS stream.
+
+    Contains 25 bid levels and 25 ask levels.  Index 0 is the best
+    bid/ask (top of book).
+    """
+    symbol: str
+    bids: list[BookLevel] = field(default_factory=list)
+    asks: list[BookLevel] = field(default_factory=list)
+    raw: dict = field(default_factory=dict)
+
+    @property
+    def best_bid(self) -> Optional[BookLevel]:
+        if self.bids and self.bids[0].price is not None:
+            return self.bids[0]
+        return None
+
+    @property
+    def best_ask(self) -> Optional[BookLevel]:
+        if self.asks and self.asks[0].price is not None:
+            return self.asks[0]
+        return None
+
+    @property
+    def spread(self) -> Optional[float]:
+        bb = self.best_bid
+        ba = self.best_ask
+        if bb is not None and ba is not None:
+            return round(ba.price - bb.price, 4)
+        return None
+
+    @property
+    def mid_price(self) -> Optional[float]:
+        bb = self.best_bid
+        ba = self.best_ask
+        if bb is not None and ba is not None:
+            return round((bb.price + ba.price) / 2, 4)
+        return None
+
+    @classmethod
+    def from_fields(cls, symbol: str, data: dict, raw: dict) -> "VirtualBook":
+        """Build a VirtualBook from parsed field data."""
+        bids = []
+        for i in range(25):
+            bids.append(BookLevel(
+                price=_to_float(data.get(f"bid_price_{i}")),
+                size=_to_int(data.get(f"bid_size_{i}")),
+                exchange=data.get(f"bid_exchange_{i}"),
+                timestamp=data.get(f"bid_time_{i}"),
+            ))
+        asks = []
+        for i in range(25):
+            asks.append(BookLevel(
+                price=_to_float(data.get(f"ask_price_{i}")),
+                size=_to_int(data.get(f"ask_size_{i}")),
+                exchange=data.get(f"ask_exchange_{i}"),
+                timestamp=data.get(f"ask_time_{i}"),
+            ))
+        return cls(symbol=symbol, bids=bids, asks=asks, raw=raw)
 
 
 @dataclass
@@ -148,9 +238,41 @@ class MDDSClient:
             "Symbol": ",".join(symbols),
         })
 
-    def parse_message(self, raw: str) -> list[MDDSQuote]:
-        """Parse a server message into quote updates.
+    def build_virtualbook_subscribe(
+        self,
+        symbol: str,
+        conflation_rate: int = 1000,
+        include_arca_only: bool = True,
+    ) -> str:
+        """Build a subscribe_virtualbook message for L2 depth."""
+        return json.dumps({
+            "SessionId": self._session.session_id,
+            "Command": "subscribe_virtualbook",
+            "Symbol": symbol,
+            "ConflationRate": conflation_rate,
+            "IncludeArcaOnly": include_arca_only,
+        })
 
+    def build_virtualbook_unsubscribe(self, symbol: str) -> str:
+        """Build an unsubscribe_virtualbook message."""
+        return json.dumps({
+            "SessionId": self._session.session_id,
+            "Command": "unsubscribe_virtualbook",
+            "Symbol": symbol,
+        })
+
+    @staticmethod
+    def _strip_vb_suffix(symbol: str) -> str:
+        """Strip the .VB suffix from virtualbook symbols."""
+        if symbol.endswith(".VB"):
+            return symbol[:-3]
+        return symbol
+
+    def parse_message(self, raw: str) -> list[Union[MDDSQuote, VirtualBook]]:
+        """Parse a server message into quote or virtualbook updates.
+
+        Returns a list of ``MDDSQuote`` for regular subscribe messages or
+        ``VirtualBook`` for subscribe_virtualbook messages.
         Returns empty list for error messages or non-data messages.
         """
         data = json.loads(raw)
@@ -164,36 +286,48 @@ class MDDSClient:
         if data.get("ResponseType") == "-1":
             return []
 
+        is_virtualbook = data.get("Command") == "subscribe_virtualbook"
+
         # Success response with data (initial snapshot)
         if data.get("ResponseType") == "1" and "Data" in data:
-            quotes = []
+            results: list[Union[MDDSQuote, VirtualBook]] = []
             for item in data["Data"]:
                 if item.get("0") != "success":
                     continue
                 symbol = item.get("6", item.get("289", ""))
-                sec_type = item.get("128", "")
-                parsed = parse_fields(item)
-                quotes.append(MDDSQuote(
-                    symbol=symbol,
-                    security_type=sec_type,
-                    data=parsed,
-                    raw=item,
-                ))
-            return quotes
+                if is_virtualbook:
+                    symbol = self._strip_vb_suffix(symbol)
+                    parsed = parse_fields(item)
+                    results.append(VirtualBook.from_fields(symbol, parsed, item))
+                else:
+                    sec_type = item.get("128", "")
+                    parsed = parse_fields(item)
+                    results.append(MDDSQuote(
+                        symbol=symbol,
+                        security_type=sec_type,
+                        data=parsed,
+                        raw=item,
+                    ))
+            return results
 
-        # Streaming tick updates (T&S data, live price changes)
+        # Streaming tick updates (T&S data, live price changes, VB deltas)
         if data.get("ResponseType") == "0" and "Data" in data:
-            quotes = []
+            results = []
             for item in data["Data"]:
                 symbol = item.get("6", item.get("289", ""))
-                sec_type = item.get("128", "")
-                parsed = parse_fields(item)
-                quotes.append(MDDSQuote(
-                    symbol=symbol,
-                    security_type=sec_type,
-                    data=parsed,
-                    raw=item,
-                ))
-            return quotes
+                if is_virtualbook:
+                    symbol = self._strip_vb_suffix(symbol)
+                    parsed = parse_fields(item)
+                    results.append(VirtualBook.from_fields(symbol, parsed, item))
+                else:
+                    sec_type = item.get("128", "")
+                    parsed = parse_fields(item)
+                    results.append(MDDSQuote(
+                        symbol=symbol,
+                        security_type=sec_type,
+                        data=parsed,
+                        raw=item,
+                    ))
+            return results
 
         return []

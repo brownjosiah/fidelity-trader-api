@@ -92,7 +92,39 @@ TIME_SALES_FIELDS = {
     "1165": "last_trade_sequence",
 }
 
-ALL_FIELDS = {**EQUITY_FIELDS, **OPTION_FIELDS, **TIME_SALES_FIELDS}
+# Virtual Book (L2 depth of book) fields — 25 levels, bid + ask
+# Captured from subscribe_virtualbook MDDS messages.
+VIRTUALBOOK_FIELDS = {
+    # Bid prices (25 levels, index 0 = best bid)
+    **{str(462 + i): f"bid_price_{i}" for i in range(25)},
+    # Bid exchange codes (25 levels)
+    **{str(487 + i): f"bid_exchange_{i}" for i in range(25)},
+    # Bid sizes (25 levels)
+    **{str(512 + i): f"bid_size_{i}" for i in range(25)},
+    # Ask prices (25 levels, index 0 = best ask)
+    **{str(537 + i): f"ask_price_{i}" for i in range(25)},
+    # Ask exchange codes (25 levels)
+    **{str(562 + i): f"ask_exchange_{i}" for i in range(25)},
+    # Ask sizes (25 levels)
+    **{str(587 + i): f"ask_size_{i}" for i in range(25)},
+    # Bid timestamps (25 levels)
+    **{str(891 + i): f"bid_time_{i}" for i in range(25)},
+    # Ask timestamps (25 levels)
+    **{str(916 + i): f"ask_time_{i}" for i in range(25)},
+}
+
+ALL_FIELDS = {**EQUITY_FIELDS, **OPTION_FIELDS, **TIME_SALES_FIELDS, **VIRTUALBOOK_FIELDS}
+
+
+def _has_virtualbook_fields(raw_data: dict) -> bool:
+    """Check if the data contains virtualbook (L2) field IDs."""
+    # VB fields are in 462-611 and 891-940 ranges
+    for k in raw_data:
+        if k.isdigit():
+            n = int(k)
+            if (462 <= n <= 611) or (891 <= n <= 940):
+                return True
+    return False
 
 
 def parse_fields(raw_data: dict, field_map: dict = None) -> dict:
@@ -101,9 +133,16 @@ def parse_fields(raw_data: dict, field_map: dict = None) -> dict:
     Unknown fields are kept as-is with their numeric key prefixed with 'field_'.
     """
     if field_map is None:
-        # Auto-detect: if field 184 (strike) exists, use option fields
+        if _has_virtualbook_fields(raw_data):
+            # Virtualbook data — use VB fields plus core equity fields for
+            # common fields like "6" (symbol) and "128" (security_type).
+            field_map = {**EQUITY_FIELDS, **VIRTUALBOOK_FIELDS}
+        elif "184" in raw_data:
+            # Auto-detect: if field 184 (strike) exists, use option fields
+            field_map = OPTION_FIELDS
+        else:
+            field_map = EQUITY_FIELDS
         # Always include T&S fields since they appear in streaming updates
-        field_map = OPTION_FIELDS if "184" in raw_data else EQUITY_FIELDS
         field_map = {**field_map, **TIME_SALES_FIELDS}
 
     result = {}

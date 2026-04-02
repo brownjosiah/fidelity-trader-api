@@ -89,7 +89,7 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Feature | Current State | Priority | Status | Notes |
 |---|---------|---------------|----------|--------|-------|
-| 3.1 | **L2 streaming depth** | Snapshot only (dtmontage REST) | **High** | TODO | Real-time streaming L2 — bypasses HTTP proxy, may need Wireshark + SSLKEYLOGFILE to capture |
+| 3.1 | **L2 streaming depth** | Snapshot + streaming virtualbook | **High** | DONE | 25-level order book via `subscribe_virtualbook` on MDDS WebSocket — captured in ts_l2_capture.flow |
 | 3.2 | **News WebSocket feed** | Auth captured, feed NOT | Medium | TODO | Have the authorize call, need the newsedge.net WebSocket protocol |
 | 3.3 | **MDDS reconnection/heartbeat** | Not implemented | Low | TODO | Auto-reconnect on disconnect, heartbeat keep-alive for production use |
 
