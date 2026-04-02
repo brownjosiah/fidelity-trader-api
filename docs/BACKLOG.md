@@ -70,9 +70,9 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Feature | Expected Endpoint | Priority | Status | Notes |
 |---|---------|-------------------|----------|--------|-------|
-| 2.1 | **Single-leg option orders** | `orderentry/option/preview+place/v1` | **High** | TODO | We have multi-leg but not single-leg option orders |
-| 2.2 | **Order modification** | `orderentry/equity/modify/v1` or cancel-replace flow | **High** | TODO | Change price/qty on existing open orders |
-| 2.3 | **Conditional/triggered orders** | Unknown — may use price-triggers API | **High** | TODO | Stop-loss, OCO, bracket orders |
+| 2.1 | **Single-leg option orders** | `orderentry/option/preview+place/v2` | **High** | CAPTURED | Captured 2026-04-02 in `fidelity_trading_capture.flow` — ready to implement |
+| 2.2 | **Order modification** | `orderentry/cancelandreplace/preview+place/v1` | **High** | CAPTURED | Cancel-and-replace workflow captured 2026-04-02 — ready to implement |
+| 2.3 | **Conditional/triggered orders** | Unknown — may use price-triggers API | **High** | TODO | Stop-loss, OCO, bracket orders — backlogged, needs future capture session |
 | 2.4 | **Watchlist CRUD** | `retail-watchlist/v1/.../create/update/delete` | Medium | TODO | We can read watchlists but not create/modify/delete |
 | 2.5 | **Alerts CRUD** | Likely same ecawsgateway SOAP | Medium | TODO | Create/edit/delete alerts (we only have subscribe) |
 | 2.6 | **Full priced option chain** | Different fastquote endpoint or params | Medium | TODO | Live bid/ask for all strikes (chainLite is summary only) |
@@ -89,7 +89,7 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Feature | Current State | Priority | Status | Notes |
 |---|---------|---------------|----------|--------|-------|
-| 3.1 | **L2 streaming depth** | Snapshot only (dtmontage REST) | **High** | TODO | Real-time streaming L2 — may need different MDDS subscription or separate WebSocket |
+| 3.1 | **L2 streaming depth** | Snapshot only (dtmontage REST) | **High** | TODO | Real-time streaming L2 — bypasses HTTP proxy, may need Wireshark + SSLKEYLOGFILE to capture |
 | 3.2 | **News WebSocket feed** | Auth captured, feed NOT | Medium | TODO | Have the authorize call, need the newsedge.net WebSocket protocol |
 | 3.3 | **MDDS reconnection/heartbeat** | Not implemented | Low | TODO | Auto-reconnect on disconnect, heartbeat keep-alive for production use |
 

@@ -10,6 +10,8 @@ from fidelity_trader.orders.status import OrderStatusAPI
 from fidelity_trader.orders.equity import EquityOrderAPI
 from fidelity_trader.orders.options import MultiLegOptionOrderAPI
 from fidelity_trader.orders.cancel import OrderCancelAPI
+from fidelity_trader.orders.single_option import SingleOptionOrderAPI
+from fidelity_trader.orders.cancel_replace import CancelReplaceAPI
 from fidelity_trader.research.data import ResearchAPI
 from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
@@ -52,6 +54,8 @@ class FidelityClient:
         self.equity_orders = EquityOrderAPI(self._http)
         self.option_orders = MultiLegOptionOrderAPI(self._http)
         self.cancel_order = OrderCancelAPI(self._http)
+        self.single_option_orders = SingleOptionOrderAPI(self._http)
+        self.cancel_replace = CancelReplaceAPI(self._http)
         self.research = ResearchAPI(self._http)
         self.search = SearchAPI(self._http)
         self.streaming = StreamingNewsAPI(self._http)

@@ -15,6 +15,8 @@ from fidelity_trader.orders.status import OrderStatusAPI
 from fidelity_trader.orders.equity import EquityOrderAPI
 from fidelity_trader.orders.options import MultiLegOptionOrderAPI
 from fidelity_trader.orders.cancel import OrderCancelAPI
+from fidelity_trader.orders.single_option import SingleOptionOrderAPI
+from fidelity_trader.orders.cancel_replace import CancelReplaceAPI
 from fidelity_trader.research.data import ResearchAPI
 from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
@@ -48,6 +50,8 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.equity_orders, EquityOrderAPI)
         assert isinstance(client.option_orders, MultiLegOptionOrderAPI)
         assert isinstance(client.cancel_order, OrderCancelAPI)
+        assert isinstance(client.single_option_orders, SingleOptionOrderAPI)
+        assert isinstance(client.cancel_replace, CancelReplaceAPI)
         assert isinstance(client.research, ResearchAPI)
         assert isinstance(client.search, SearchAPI)
         assert isinstance(client.streaming, StreamingNewsAPI)
@@ -79,6 +83,8 @@ def test_all_modules_share_same_http_client():
         assert client.equity_orders._http is http
         assert client.option_orders._http is http
         assert client.cancel_order._http is http
+        assert client.single_option_orders._http is http
+        assert client.cancel_replace._http is http
         assert client.research._http is http
         assert client.search._http is http
         assert client.streaming._http is http
