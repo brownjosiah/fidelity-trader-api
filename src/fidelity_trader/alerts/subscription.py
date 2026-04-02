@@ -6,15 +6,54 @@ import xml.etree.ElementTree as ET
 import httpx
 
 from fidelity_trader._http import ALERTS_URL
-from fidelity_trader.models.alerts import AlertActivation
+from fidelity_trader.models.alerts import AlertActivation, AlertsResponse
 
 _SUBSCRIBE_PATH = "/ftgw/alerts/services/ATBTSubscription"
+_ALERTS_PATH = "/ftgw/alerts/services/ATBTAlerts"
 
 # XML namespaces (match the captured request exactly)
 _NS_SOAP = "http://schemas.xmlsoap.org/soap/envelope/"
 _NS_PROD = "http://xmlns.fmr.com/institutional/common/headers/2011/08/ProductIdentity"
 _NS_PRIN = "http://xmlns.fmr.com/institutional/common/headers/2012/09/PrincipalIdentity"
 _NS_AUT = "http://xmlns.fmr.com/institutional/eca/fens/2014/06/AutoSubscription"
+
+
+def _build_get_alerts_envelope(msg_from: int = 1, msg_to: int = 100) -> bytes:
+    """Build the GetAlerts SOAP request body as UTF-8 bytes.
+
+    Uses a raw XML template matching the captured request format.
+    """
+    return (
+        "<soapenv:Envelope"
+        " xmlns:prin='http://xmlns.fmr.com/institutional/common/headers/2012/09/PrincipalIdentity'"
+        " xmlns:prod='http://xmlns.fmr.com/institutional/common/headers/2011/08/ProductIdentity'"
+        " xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'"
+        " xmlns:xsd='http://www.w3.org/2001/XMLSchema'"
+        " xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'>"
+        "<soapenv:Header>"
+        "<prin:PrincipalIdentity>"
+        "<prin:RequestorId>Fidelity</prin:RequestorId>"
+        "<prin:AuthMethod>Basic</prin:AuthMethod>"
+        "<prin:PrincipalDomain>Retail</prin:PrincipalDomain>"
+        "<prin:RequestorType>Standard</prin:RequestorType>"
+        "<prin:PrincipalRole>Owner</prin:PrincipalRole>"
+        "</prin:PrincipalIdentity>"
+        "<prod:ProductIdentity>"
+        "<prod:AppId>AP002304</prod:AppId>"
+        "<prod:AppName>ATP</prod:AppName>"
+        "<prod:AppVersion>4.5.1</prod:AppVersion>"
+        "<prod:ProductId>ATP</prod:ProductId>"
+        "<prod:SubSystem>ActiveTrader</prod:SubSystem>"
+        "</prod:ProductIdentity>"
+        "</soapenv:Header>"
+        "<soapenv:Body>"
+        "<GetAlerts xmlns='http://xmlns.fmr.com/brokerage/fens/service/ALERTS/2009-09'>"
+        f"<MsgIndexFrom>{msg_from}</MsgIndexFrom>"
+        f"<MsgIndexTo>{msg_to}</MsgIndexTo>"
+        "</GetAlerts>"
+        "</soapenv:Body>"
+        "</soapenv:Envelope>"
+    ).encode("utf-8")
 
 
 def _build_soap_envelope() -> bytes:
@@ -80,3 +119,29 @@ class AlertsAPI:
         )
         resp.raise_for_status()
         return AlertActivation.from_xml(resp.content)
+
+    def get_alerts(self, msg_from: int = 1, msg_to: int = 100) -> AlertsResponse:
+        """Retrieve alert messages (order fills, cancellations, etc.).
+
+        POSTs the ``GetAlerts`` SOAP envelope to the ATBTAlerts endpoint.
+        Returns an :class:`~fidelity_trader.models.alerts.AlertsResponse`
+        containing the total message count and parsed alert messages.
+
+        Args:
+            msg_from: Starting message index (1-based, default 1).
+            msg_to: Ending message index (default 100).
+
+        Raises:
+            httpx.HTTPStatusError: on non-2xx responses.
+            ValueError: if the SOAP response cannot be parsed.
+        """
+        soap_body = _build_get_alerts_envelope(msg_from, msg_to)
+        resp = self._http.post(
+            f"{ALERTS_URL}{_ALERTS_PATH}",
+            content=soap_body,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        )
+        resp.raise_for_status()
+        return AlertsResponse.from_soap_response(resp.content)
