@@ -3,6 +3,7 @@
 import httpx
 import pytest
 import respx
+from unittest.mock import patch
 
 import fidelity_trader
 from fidelity_trader import FidelityClient
@@ -242,3 +243,38 @@ def test_package_exports_exceptions():
 
 def test_package_version():
     assert fidelity_trader.__version__ == "0.1.0"
+
+
+# ---------------------------------------------------------------------------
+# Auto-refresh lifecycle
+# ---------------------------------------------------------------------------
+
+def test_enable_auto_refresh_starts_background_thread():
+    with FidelityClient() as client:
+        with patch.object(
+            client.session_keepalive, "extend_session", return_value=True
+        ):
+            client.enable_auto_refresh(interval=60)
+            assert client._auto_refresh is not None
+            assert client._auto_refresh.is_running is True
+
+
+def test_disable_auto_refresh_stops_and_clears():
+    with FidelityClient() as client:
+        with patch.object(
+            client.session_keepalive, "extend_session", return_value=True
+        ):
+            client.enable_auto_refresh(interval=60)
+            client.disable_auto_refresh()
+            assert client._auto_refresh is None
+
+
+def test_close_stops_auto_refresh():
+    client = FidelityClient()
+    with patch.object(
+        client.session_keepalive, "extend_session", return_value=True
+    ):
+        client.enable_auto_refresh(interval=60)
+        auto = client._auto_refresh
+        client.close()
+        assert auto.is_running is False

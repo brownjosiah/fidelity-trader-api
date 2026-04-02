@@ -1,11 +1,11 @@
 # Fidelity Trader SDK — Project Backlog
 
-> Last updated: 2026-03-31
-> Current state: **23 API modules**, **822 tests**, **6 capture files**
+> Last updated: 2026-04-02
+> Current state: **31 API modules**, **1330 tests**, **8 capture files**
 
 ---
 
-## Implemented Modules (23)
+## Implemented Modules (31)
 
 | # | Accessor | Class | Endpoint | Host |
 |---|----------|-------|----------|------|
@@ -32,9 +32,18 @@
 | 21 | `available_markets` | AvailableMarketsAPI | `POST /ftgw/dp/reference/security/stock/availablemarket/v1` | dpservice |
 | 22 | `preferences` | PreferencesAPI | `POST /ftgw/dp/.../atn-prefs/{get,save,delete}preference` | dpservice |
 | 23 | `security_context` | SecurityContextAPI | `POST /ftgw/digital/pico/api/v1/context/security` | digital |
+| 24 | `single_option_orders` | SingleOptionOrderAPI | `POST /ftgw/dp/orderentry/option/{preview,place}/v2` | dpservice |
+| 25 | `cancel_replace` | CancelReplaceAPI | `POST /ftgw/dp/orderentry/cancelandreplace/{preview,place}/v1` | dpservice |
+| 26 | `conditional_orders` | ConditionalOrderAPI | `POST /ftgw/dp/orderentry/conditional/{preview,place}/v1` | dpservice |
+| 27 | `staged_orders` | StagedOrderAPI | `POST /ftgw/dp/ent-research-staging/v1/.../staged-order/get` | dpservice |
+| 28 | `session_keepalive` | SessionKeepAliveAPI | `GET /ftgw/digital/portfolio/extendsession` | digital |
+| 29 | `holiday_calendar` | HolidayCalendarAPI | `GET /ftgw/dpdirect/market/holidaycalendar/v1` | dpservice |
+| 30 | `price_triggers` | PriceTriggersAPI | `GET+POST /ftgw/dp/retail-price-triggers/v1/.../list,create,delete` | dpservice |
+| 31 | `screener` | ScreenerAPI | `POST fidelity.apps.livevol.com ExecuteScan via SAML` | livevol |
 
 **Streaming (non-REST):**
 - MDDS WebSocket (`wss://mdds-i-tc.fidelity.com/?productid=atn`) — live quotes, options w/ Greeks, T&S fields (1159-1165)
+- MDDS L2 virtualbook (`subscribe_virtualbook` on same WebSocket) — 25-level order book depth
 
 **Hosts:**
 - `dpservice.fidelity.com` — Portfolio, orders, research, watchlists, preferences
@@ -44,6 +53,8 @@
 - `ecawsgateway.fidelity.com` — Alerts (SOAP/XML)
 - `streaming-news.mds.fidelity.com` — News streaming auth
 - `mdds-i-tc.fidelity.com` — Real-time market data WebSocket
+- `fidelity.apps.livevol.com` — Screener (LiveVol ExecuteScan via SAML)
+- `fidelity-widgets.financial.com` — SAML auth for screener
 
 ---
 
@@ -70,8 +81,8 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Feature | Expected Endpoint | Priority | Status | Notes |
 |---|---------|-------------------|----------|--------|-------|
-| 2.1 | **Single-leg option orders** | `orderentry/option/preview+place/v2` | **High** | CAPTURED | Captured 2026-04-02 in `fidelity_trading_capture.flow` — ready to implement |
-| 2.2 | **Order modification** | `orderentry/cancelandreplace/preview+place/v1` | **High** | CAPTURED | Cancel-and-replace workflow captured 2026-04-02 — ready to implement |
+| 2.1 | **Single-leg option orders** | `orderentry/option/preview+place/v2` | **High** | DONE | SingleOptionOrderAPI with preview/place, previewInd=false quirk |
+| 2.2 | **Order modification** | `orderentry/cancelandreplace/preview+place/v1` | **High** | DONE | CancelReplaceAPI — atomic cancel-and-replace using orderNumOrig |
 | 2.3 | **Conditional/triggered orders** | `orderentry/conditional/preview+place/v1` | **High** | DONE | OTOCO/OTO/OCO with stop + limit legs — captured 2026-04-02 |
 | 2.4 | **Watchlist CRUD** | `retail-watchlist/v1/.../save` | Medium | PARTIAL | save_watchlist() added — create/delete still TODO |
 | 2.5 | **Alerts CRUD** | Likely same ecawsgateway SOAP | Medium | TODO | Create/edit/delete alerts (we only have subscribe) |
@@ -111,12 +122,12 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 All SDK work (Phases 1-4 below) takes priority over the service layer. The self-hosted REST/WebSocket service ([`SERVICE_PLAN.md`](SERVICE_PLAN.md)) is Phase 2 of the overall project roadmap and should begin once the core trading workflow is complete.
 
-| Priority | Count | Items |
-|----------|-------|-------|
-| **High** | 4 | Single-leg options (2.1), Order modify (2.2), Conditional orders (2.3), L2 streaming (3.1) |
-| **Medium** | 17 | Holiday calendar (1.1), Staged orders (1.2), Price triggers (1.4), Session keepalive (1.7), Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), Margin (2.7), Screener (2.8), News feed (2.9/3.2), Fundamentals (2.10), Stale models (4.1), CLAUDE.md (4.2), Walkthrough (4.3), Session refresh (4.4) |
-| **Low** | 10 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), PyPI (4.7) |
-| **Skip** | 1 | Login logging/telemetry (1.8) |
+| Priority | Done | Remaining | Items |
+|----------|------|-----------|-------|
+| **High** | 4 | 0 | ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~ |
+| **Medium** | 8 | 7 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Walkthrough (4.3), Session refresh (4.4) |
+| **Low** | 0 | 11 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), PyPI (4.7) |
+| **Skip** | 1 | 0 | Login logging/telemetry (1.8) |
 
 ---
 
@@ -130,6 +141,8 @@ All SDK work (Phases 1-4 below) takes priority over the service layer. The self-
 | `~/fidelity_2fa_capture.flow` | TOTP 2FA flow, option chain, alerts, search, news auth |
 | `~/fidelity_websocket_capture.flow` | MDDS WebSocket, holiday calendar, price triggers, staged orders |
 | `~/fidelity_ts_l2_capture.flow` | Time & Sales / L2 capture attempt (limited — native app bypassed proxy) |
+| `~/fidelity_trading_capture.flow` | Single-leg options, cancel-replace, session keepalive |
+| `~/fidelity_crud_capture.flow` | Conditional orders, watchlist save, price triggers CRUD, screener, alerts, margin details |
 
 ## Filter Scripts
 

@@ -31,6 +31,7 @@ from fidelity_trader.reference.markets import AvailableMarketsAPI
 from fidelity_trader.settings.preferences import PreferencesAPI
 from fidelity_trader.auth.security_context import SecurityContextAPI
 from fidelity_trader.auth.session_keepalive import SessionKeepAliveAPI
+from fidelity_trader.auth.auto_refresh import SessionAutoRefresh
 from fidelity_trader.reference.holiday_calendar import HolidayCalendarAPI
 from fidelity_trader.alerts.price_triggers import PriceTriggersAPI
 
@@ -50,6 +51,7 @@ class FidelityClient:
     def __init__(self) -> None:
         self._http = create_atp_session()
         self._auth = AuthSession(self._http, BASE_URL, AUTH_URL)
+        self._auto_refresh: SessionAutoRefresh | None = None
 
         # All modules share the same httpx client (and its cookie jar)
         self.positions = PositionsAPI(self._http)
@@ -114,7 +116,27 @@ class FidelityClient:
     def is_authenticated(self) -> bool:
         return self._auth.is_authenticated
 
+    # ------------------------------------------------------------------
+    # Auto-refresh
+    # ------------------------------------------------------------------
+
+    def enable_auto_refresh(self, interval: int = 300) -> None:
+        """Start background session refresh every *interval* seconds."""
+        if self._auto_refresh is not None and self._auto_refresh.is_running:
+            self._auto_refresh.stop()
+        self._auto_refresh = SessionAutoRefresh(
+            self.session_keepalive, interval=interval
+        )
+        self._auto_refresh.start()
+
+    def disable_auto_refresh(self) -> None:
+        """Stop background session refresh."""
+        if self._auto_refresh is not None:
+            self._auto_refresh.stop()
+            self._auto_refresh = None
+
     def close(self) -> None:
+        self.disable_auto_refresh()
         self._http.close()
 
     def __enter__(self):

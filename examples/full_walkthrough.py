@@ -413,6 +413,402 @@ with FidelityClient() as client:
         import traceback; traceback.print_exc()
 
     # =========================================================================
+    # 18. CLOSED POSITIONS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  18. CLOSED POSITIONS (YTD)")
+    print("=" * 70)
+    try:
+        closed = client.closed_positions.get_closed_positions(acct_nums, "01/01/2026", "04/02/2026")
+        pgl = closed.portfolio_detail.portfolio_gain_loss_detail if closed.portfolio_detail else None
+        if pgl:
+            tgl = f"${pgl.total_gain_loss:,.2f}" if pgl.total_gain_loss is not None else "N/A"
+            print(f"  Portfolio total G/L:  {tgl}")
+        print(f"  Accounts: {len(closed.accounts)}\n")
+        for ca in closed.accounts:
+            cnt = ca.closed_position_count or 0
+            gl = ca.total_gain_loss_detail
+            gl_str = f"${gl.total_gain_loss:,.2f}" if gl and gl.total_gain_loss is not None else "N/A"
+            print(f"    {ca.acct_num:15s}  closed={cnt}  G/L={gl_str}")
+            for cp in ca.closed_positions[:3]:
+                proceeds = f"${cp.proceeds_amt:,.2f}" if cp.proceeds_amt is not None else "N/A"
+                print(f"      {cp.symbol or '??':15s}  qty={cp.quantity or 0:>8.2f}  proceeds={proceeds:>12}")
+            if len(ca.closed_positions) > 3:
+                print(f"      ... and {len(ca.closed_positions) - 3} more")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 19. LOANED SECURITIES
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  19. LOANED SECURITIES")
+    print("=" * 70)
+    try:
+        loaned = client.loaned_securities.get_loaned_securities(acct_nums)
+        print(f"  Accounts: {len(loaned.accounts)}\n")
+        for la in loaned.accounts:
+            mtd = f"${la.month_to_date_accruals:,.2f}" if la.month_to_date_accruals is not None else "N/A"
+            print(f"    {la.acct_num or '??':15s}  MTD accruals={mtd}  contracts={len(la.contract_data_details)}")
+            for cd in la.contract_data_details[:3]:
+                rate = f"{cd.rate:.4f}%" if cd.rate is not None else "N/A"
+                val = f"${cd.contract_val:,.2f}" if cd.contract_val is not None else "N/A"
+                print(f"      {cd.symbol or '??':10s}  rate={rate:>10}  value={val:>12}  qty={cd.contract_qty}")
+            if len(la.contract_data_details) > 3:
+                print(f"      ... and {len(la.contract_data_details) - 3} more")
+        if not loaned.accounts:
+            print("    (no loaned securities)")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 20. TAX LOTS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  20. TAX LOTS")
+    print("=" * 70)
+    try:
+        # Use first brokerage account and a commonly held symbol
+        tax_sym = "AAPL"
+        tax_lots = client.tax_lots.get_tax_lots(acct_nums[0], tax_sym)
+        sym_name = tax_lots.security_detail.symbol if tax_lots.security_detail else tax_sym
+        print(f"  Account: {tax_lots.acct_num}")
+        print(f"  Symbol:  {sym_name}")
+        print(f"  Exec qty: {tax_lots.exec_qty}")
+        if tax_lots.specific_shr_tax_lot_detail:
+            lots = tax_lots.specific_shr_tax_lot_detail.specific_shr_tax_lot_details
+            n = tax_lots.specific_shr_tax_lot_detail.num_of_lots
+            print(f"  Tax lots: {n or len(lots)}\n")
+            for lot in lots[:5]:
+                tla = lot.specific_shr_tax_lot_accounting_detail
+                if tla:
+                    basis = f"${tla.cost_basis:,.2f}" if tla.cost_basis is not None else "N/A"
+                    gl = f"${tla.unrealized_gain_loss:,.2f}" if tla.unrealized_gain_loss is not None else "N/A"
+                    print(f"    Lot {lot.lot_seq}:  qty={tla.qty}  term={tla.term}  basis={basis}  G/L={gl}")
+            if len(lots) > 5:
+                print(f"    ... and {len(lots) - 5} more lots")
+        else:
+            print("  (no tax lot data)")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 21. AVAILABLE MARKETS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  21. AVAILABLE MARKETS")
+    print("=" * 70)
+    try:
+        mkts = client.available_markets.get_available_markets("AAPL", acct_nums)
+        sec = mkts.security
+        print(f"  Symbol: {sec.symbol}  CUSIP: {sec.cusip}  Markets: {sec.avail_mkt_cnt}\n")
+        for m in mkts.available_markets:
+            hours = f"{m.market_hours.market_opening_hours}-{m.market_hours.market_closing_hours}"
+            print(f"    {m.name:30s}  route={m.routing_code:8s}  hours={hours}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 22. PREFERENCES
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  22. PREFERENCES")
+    print("=" * 70)
+    try:
+        prefs = client.preferences.get_preferences("user/atn/global/v1")
+        print(f"  Success: {prefs.is_success}")
+        print(f"  Paths returned: {len(prefs.preference_data)}\n")
+        for pd in prefs.preference_data:
+            print(f"    Path: {pd.preference_path}")
+            for kv in pd.data[:5]:
+                for k, v in kv.items():
+                    val_str = str(v)[:60]
+                    print(f"      {k}: {val_str}")
+            if len(pd.data) > 5:
+                print(f"      ... and {len(pd.data) - 5} more entries")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 23. SECURITY CONTEXT
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  23. SECURITY CONTEXT (entitlements)")
+    print("=" * 70)
+    try:
+        ctx = client.security_context.get_context()
+        print(f"  Employee indicator: {ctx.employee_indicator}")
+        print(f"  Real-time quotes:   {ctx.has_realtime_quotes}")
+        print(f"  ATP access:         {ctx.has_atp_access}")
+        print(f"  Entitlements: {len(ctx.entitlements)}\n")
+        for ent in ctx.entitlements[:10]:
+            print(f"    {ent.display:30s}  value={ent.value:8s}  class={ent.classification}")
+        if len(ctx.entitlements) > 10:
+            print(f"    ... and {len(ctx.entitlements) - 10} more")
+        if ctx.persona_references:
+            print(f"\n  Persona references:")
+            for pr in ctx.persona_references:
+                print(f"    realm={pr.realm}  role={pr.role}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 24. SESSION KEEPALIVE
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  24. SESSION KEEPALIVE")
+    print("=" * 70)
+    try:
+        alive = client.session_keepalive.is_session_alive()
+        print(f"  Session alive: {alive}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 25. HOLIDAY CALENDAR
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  25. HOLIDAY CALENDAR")
+    print("=" * 70)
+    try:
+        holidays = client.holiday_calendar.get_holidays()
+        print(f"  Holidays: {len(holidays.holidays)}\n")
+        for h in holidays.holidays:
+            htype = "CLOSED" if h.is_full_holiday else f"EARLY CLOSE ({h.early_close_tm})"
+            print(f"    {h.date_str}  {h.holiday_desc:30s}  {htype}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 26. STAGED ORDERS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  26. STAGED ORDERS")
+    print("=" * 70)
+    try:
+        staged = client.staged_orders.get_staged_orders()
+        if staged.is_empty:
+            print("  No staged orders found")
+            for msg in staged.messages:
+                print(f"    [{msg.code}] {msg.message}")
+        else:
+            print(f"  Staged orders: {len(staged.staged_orders or [])}")
+            for so in (staged.staged_orders or []):
+                print(f"    ID={so.stage_id}  type={so.stage_type}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 27. PRICE TRIGGERS
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  27. PRICE TRIGGERS")
+    print("=" * 70)
+    try:
+        triggers = client.price_triggers.get_price_triggers("AAPL")
+        pt = triggers.price_trigger
+        print(f"  Total capacity: {pt.total_account}")
+        print(f"  Available:      {pt.available_account}")
+        print(f"  Active triggers: {len(pt.triggers)}\n")
+        for t in pt.triggers[:5]:
+            sym = t.symbol or "??"
+            op = t.operator or t.trigger_type or "??"
+            val = t.value if t.value is not None else t.trigger_price
+            print(f"    {sym:8s}  {op:25s}  value={val}  status={t.status}")
+        if len(pt.triggers) > 5:
+            print(f"    ... and {len(pt.triggers) - 5} more")
+        if not pt.triggers:
+            print("    (no active triggers for AAPL)")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 28. SINGLE OPTION ORDER (request construction only)
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  28. SINGLE OPTION ORDER (request construction only)")
+    print("=" * 70)
+    try:
+        from fidelity_trader.models.single_option_order import SingleOptionOrderRequest
+
+        option_req = SingleOptionOrderRequest(
+            acctNum=acct_nums[0],
+            symbol="AAPL260417C200",
+            orderActionCode="BC",       # Buy Call
+            acctTypeCode="M",
+            qty=1,
+            tifCode="D",
+            priceTypeCode="L",          # Limit
+            limitPrice=5.00,
+        )
+        preview_body = option_req.to_preview_body()
+        print("  Request constructed (NOT sent):")
+        print(f"    Account:  {option_req.acct_num}")
+        print(f"    Symbol:   {option_req.symbol}")
+        print(f"    Action:   {option_req.order_action_code}")
+        print(f"    Qty:      {option_req.qty}")
+        print(f"    Price:    Limit @ ${option_req.limit_price}")
+        print(f"\n  Preview body:")
+        print(f"    {json.dumps(preview_body, indent=4)[:500]}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 29. CANCEL-AND-REPLACE (request construction only)
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  29. CANCEL-AND-REPLACE (request construction only)")
+    print("=" * 70)
+    try:
+        from fidelity_trader.models.cancel_replace import CancelReplaceRequest
+
+        cr_req = CancelReplaceRequest(
+            acctNum=acct_nums[0],
+            orderNumOrig="999999999",   # Fake order number
+            symbol="AAPL",
+            orderActionCode="B",        # Buy
+            acctTypeCode="M",
+            qty=100,
+            tifCode="D",
+            priceTypeCode="L",          # Limit
+            limitPrice=150.00,
+        )
+        cr_preview = cr_req.to_preview_body()
+        print("  Request constructed (NOT sent):")
+        print(f"    Account:     {cr_req.acct_num}")
+        print(f"    Orig order:  {cr_req.order_num_orig}")
+        print(f"    Symbol:      {cr_req.symbol}")
+        print(f"    Action:      {cr_req.order_action_code}")
+        print(f"    Qty:         {cr_req.qty}")
+        print(f"    Price:       Limit @ ${cr_req.limit_price}")
+        print(f"\n  Preview body:")
+        print(f"    {json.dumps(cr_preview, indent=4)[:500]}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 30. CONDITIONAL ORDER (request construction only)
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  30. CONDITIONAL ORDER — OTOCO (request construction only)")
+    print("=" * 70)
+    try:
+        from fidelity_trader.models.conditional_order import (
+            ConditionalOrderRequest,
+            ConditionalOrderLeg,
+        )
+
+        cond_req = ConditionalOrderRequest(
+            condOrderTypeCode="OTOCO",
+            acctNum=acct_nums[0],
+            legs=[
+                ConditionalOrderLeg(
+                    orderActionCode="B",        # Primary: Buy
+                    qty=100,
+                    symbol="AAPL",
+                    priceTypeCode="L",
+                    limitPrice=180.00,
+                ),
+                ConditionalOrderLeg(
+                    orderActionCode="S",        # Triggered: Sell (profit target)
+                    qty=100,
+                    symbol="AAPL",
+                    priceTypeCode="L",
+                    limitPrice=200.00,
+                    tifCode="G",                # GTC
+                ),
+                ConditionalOrderLeg(
+                    orderActionCode="S",        # Triggered: Sell (stop loss)
+                    qty=100,
+                    symbol="AAPL",
+                    priceTypeCode="S",          # Stop
+                    stopPrice=170.00,
+                    tifCode="G",
+                ),
+            ],
+        )
+        cond_preview = cond_req.to_preview_body()
+        print("  Request constructed (NOT sent):")
+        print(f"    Type:    {cond_req.cond_order_type_code}")
+        print(f"    Account: {cond_req.acct_num}")
+        print(f"    Legs:    {len(cond_req.legs)}")
+        for i, leg in enumerate(cond_req.legs):
+            role = "Primary" if i == 0 else f"Triggered #{i}"
+            price_info = ""
+            if leg.limit_price is not None:
+                price_info = f"limit=${leg.limit_price}"
+            if leg.stop_price is not None:
+                price_info = f"stop=${leg.stop_price}"
+            print(f"      [{role}] {leg.order_action_code} {leg.qty} {leg.symbol}  {price_info}  TIF={leg.tif_code}")
+        print(f"\n  Preview body:")
+        print(f"    {json.dumps(cond_preview, indent=4)[:600]}")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 31. SCREENER (LiveVol)
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  31. SCREENER (LiveVol)")
+    print("=" * 70)
+    try:
+        session = client.screener.authenticate()
+        print(f"  Session ID:  {session.sid}")
+        print(f"  Token:       {session.token[:60]}...")
+        print(f"  Expires at:  {session.expires_at}")
+
+        scan = client.screener.execute_scan(2)
+        print(f"\n  Scan results: {len(scan.rows)} rows")
+        if scan.rows:
+            # Print column headers from the first row
+            headers = [f.display_name for f in scan.rows[0].fields[:6]]
+            print(f"    Columns: {', '.join(headers)}")
+            for row in scan.rows[:5]:
+                sym = row.get("Symbol", "??")
+                vals = [row.get(h, "") for h in headers[1:6]]
+                print(f"    {sym:8s}  {' | '.join(v[:12] for v in vals)}")
+            if len(scan.rows) > 5:
+                print(f"    ... and {len(scan.rows) - 5} more rows")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
+    # 32. ALERTS (get_alerts — order fills and cancellations)
+    # =========================================================================
+    print("\n" + "=" * 70)
+    print("  32. ALERTS (get_alerts)")
+    print("=" * 70)
+    try:
+        alerts_resp = client.alerts.get_alerts()
+        print(f"  Total messages: {alerts_resp.total_count}")
+        print(f"  Retrieved:      {len(alerts_resp.messages)}\n")
+        for msg in alerts_resp.messages[:5]:
+            status = msg.order_status or msg.msg_type
+            print(f"    [{status:10s}] {msg.display_text[:60]}")
+            print(f"               sym={msg.symbol}  qty={msg.quantity}  price={msg.price}  acct={msg.account_num}")
+        if len(alerts_resp.messages) > 5:
+            print(f"    ... and {len(alerts_resp.messages) - 5} more")
+        if not alerts_resp.messages:
+            print("    (no alert messages)")
+    except Exception as e:
+        print(f"  FAILED: {e}")
+        import traceback; traceback.print_exc()
+
+    # =========================================================================
     # DONE
     # =========================================================================
     print("\n" + "=" * 70)
@@ -422,5 +818,5 @@ with FidelityClient() as client:
     print(f"    Authenticated: {client.is_authenticated}")
 
     print("\n" + "=" * 70)
-    print("  WALKTHROUGH COMPLETE — 17 modules tested")
+    print("  WALKTHROUGH COMPLETE — 31 modules tested")
     print("=" * 70)
