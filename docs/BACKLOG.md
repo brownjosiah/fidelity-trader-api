@@ -97,8 +97,8 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Item | Priority | Status | Notes |
 |---|------|----------|--------|-------|
-| 4.1 | **Clean up stale models/account.py** | Medium | TODO | Has old Account/Balance/Position from assumption-based Task 2 — reconcile or remove |
-| 4.2 | **Update CLAUDE.md** | Medium | TODO | Doesn't reflect 23-module API surface, real host list, or current architecture |
+| 4.1 | **Clean up stale models/account.py** | Medium | DONE | Extracted _parse_float/_parse_int to _parsers.py, removed stale Account/Balance/Position classes |
+| 4.2 | **Update CLAUDE.md** | Medium | DONE | Rewritten to reflect 25-module architecture, all hosts, API quirks, capture workflow |
 | 4.3 | **Update full_walkthrough.py** | Medium | TODO | Example should cover all 23 modules including new ones |
 | 4.4 | **Session keep-alive / auto-refresh** | Medium | TODO | No automatic session extension — long-running apps will timeout |
 | 4.5 | **Async client option** | Low | TODO | All modules are sync httpx; could add async variants |
