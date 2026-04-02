@@ -8,3 +8,5 @@ build/
 *.flow
 *.har
 .pytest_cache/
+.ruff_cache/
+*.whl

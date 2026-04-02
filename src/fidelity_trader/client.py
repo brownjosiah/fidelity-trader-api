@@ -48,8 +48,11 @@ class FidelityClient:
             earnings = client.research.get_earnings(["AAPL", "MSFT"])
     """
 
-    def __init__(self) -> None:
-        self._http = create_atp_session()
+    def __init__(self, max_retries: int = 0, retry_delay: float = 1.0) -> None:
+        self._http = create_atp_session(
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+        )
         self._auth = AuthSession(self._http, BASE_URL, AUTH_URL)
         self._auto_refresh: SessionAutoRefresh | None = None
 

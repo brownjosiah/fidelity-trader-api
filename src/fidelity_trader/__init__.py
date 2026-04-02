@@ -1,4 +1,5 @@
 from fidelity_trader.client import FidelityClient
+from fidelity_trader.async_client import AsyncFidelityClient
 from fidelity_trader.exceptions import (
     FidelityError,
     AuthenticationError,
@@ -9,6 +10,7 @@ from fidelity_trader.exceptions import (
 
 __all__ = [
     "FidelityClient",
+    "AsyncFidelityClient",
     "FidelityError",
     "AuthenticationError",
     "SessionExpiredError",
