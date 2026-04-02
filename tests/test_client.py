@@ -32,6 +32,10 @@ from fidelity_trader.portfolio.tax_lots import TaxLotAPI
 from fidelity_trader.reference.markets import AvailableMarketsAPI
 from fidelity_trader.settings.preferences import PreferencesAPI
 from fidelity_trader.auth.security_context import SecurityContextAPI
+from fidelity_trader.auth.session_keepalive import SessionKeepAliveAPI
+from fidelity_trader.reference.holiday_calendar import HolidayCalendarAPI
+from fidelity_trader.orders.staged import StagedOrderAPI
+from fidelity_trader.alerts.price_triggers import PriceTriggersAPI
 from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
@@ -67,6 +71,10 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.available_markets, AvailableMarketsAPI)
         assert isinstance(client.preferences, PreferencesAPI)
         assert isinstance(client.security_context, SecurityContextAPI)
+        assert isinstance(client.session_keepalive, SessionKeepAliveAPI)
+        assert isinstance(client.holiday_calendar, HolidayCalendarAPI)
+        assert isinstance(client.staged_orders, StagedOrderAPI)
+        assert isinstance(client.price_triggers, PriceTriggersAPI)
     finally:
         client.close()
 
@@ -100,6 +108,10 @@ def test_all_modules_share_same_http_client():
         assert client.available_markets._http is http
         assert client.preferences._http is http
         assert client.security_context._http is http
+        assert client.session_keepalive._http is http
+        assert client.holiday_calendar._http is http
+        assert client.staged_orders._http is http
+        assert client.price_triggers._http is http
     finally:
         client.close()
 

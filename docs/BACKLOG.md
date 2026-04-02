@@ -55,13 +55,13 @@ Endpoints that exist in our mitmproxy capture files but have no SDK module.
 
 | # | Endpoint | Source | Priority | Status | Notes |
 |---|----------|--------|----------|--------|-------|
-| 1.1 | `GET .../dpdirect/market/holidaycalendar/v1` | websocket capture | Medium | TODO | Market holiday schedule — useful for trading bots to know market closures |
-| 1.2 | `POST .../ent-research-staging/v1/customers/staged-order/get` | websocket capture | Medium | TODO | Staged/saved orders — retrieve draft orders before submission |
+| 1.1 | `GET .../dpdirect/market/holidaycalendar/v1` | websocket capture | Medium | DONE | Market holiday schedule with full/abbreviated day support |
+| 1.2 | `POST .../ent-research-staging/v1/customers/staged-order/get` | websocket capture | Medium | DONE | Staged/saved orders retrieval |
 | 1.3 | `POST .../research/tool/notebook/note/detail/v1` | portfolio capture | Low | TODO | Notes/notebook feature (capture returned "no notes" — needs data to model) |
-| 1.4 | `GET .../retail-price-triggers/v1/.../alert/price-triggers/list` | websocket capture | Medium | TODO | Price alert triggers list — complement to alerts subscription |
+| 1.4 | `GET .../retail-price-triggers/v1/.../alert/price-triggers/list` | websocket capture | Medium | DONE | Price alert triggers list with pagination |
 | 1.5 | `POST .../retail-indepInvs-pref/v1/getPreference` | websocket capture | Low | TODO | Shared chart preferences (separate pref system from ATN prefs) |
 | 1.6 | `GET .../content-headless/v2/content` | portfolio capture | Low | TODO | App announcements/content CMS — minimal user value |
-| 1.7 | `GET .../ftgw/digital/portfolio/extendsession` | capture | Medium | TODO | Session keep-alive — useful for long-running bots |
+| 1.7 | `GET .../ftgw/digital/portfolio/extendsession` | capture | Medium | DONE | Session keep-alive with is_session_alive convenience method |
 | 1.8 | `POST .../prgw/digital/login/logging/new-entry` | capture | Skip | — | Internal telemetry/logging — no user value |
 
 ### 2. Needs New Captures

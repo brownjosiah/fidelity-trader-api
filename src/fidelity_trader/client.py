@@ -12,6 +12,7 @@ from fidelity_trader.orders.options import MultiLegOptionOrderAPI
 from fidelity_trader.orders.cancel import OrderCancelAPI
 from fidelity_trader.orders.single_option import SingleOptionOrderAPI
 from fidelity_trader.orders.cancel_replace import CancelReplaceAPI
+from fidelity_trader.orders.staged import StagedOrderAPI
 from fidelity_trader.research.data import ResearchAPI
 from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
@@ -27,6 +28,9 @@ from fidelity_trader.portfolio.tax_lots import TaxLotAPI
 from fidelity_trader.reference.markets import AvailableMarketsAPI
 from fidelity_trader.settings.preferences import PreferencesAPI
 from fidelity_trader.auth.security_context import SecurityContextAPI
+from fidelity_trader.auth.session_keepalive import SessionKeepAliveAPI
+from fidelity_trader.reference.holiday_calendar import HolidayCalendarAPI
+from fidelity_trader.alerts.price_triggers import PriceTriggersAPI
 
 
 class FidelityClient:
@@ -71,6 +75,10 @@ class FidelityClient:
         self.available_markets = AvailableMarketsAPI(self._http)
         self.preferences = PreferencesAPI(self._http)
         self.security_context = SecurityContextAPI(self._http)
+        self.session_keepalive = SessionKeepAliveAPI(self._http)
+        self.holiday_calendar = HolidayCalendarAPI(self._http)
+        self.staged_orders = StagedOrderAPI(self._http)
+        self.price_triggers = PriceTriggersAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.
