@@ -22,6 +22,7 @@ from fidelity_trader.portfolio.accounts import AccountsAPI
 from fidelity_trader.market_data.fastquote import FastQuoteAPI
 from fidelity_trader.market_data.chart import ChartAPI
 from fidelity_trader.research.analytics import OptionAnalyticsAPI
+from fidelity_trader.research.screener import ScreenerAPI
 from fidelity_trader.alerts.subscription import AlertsAPI
 from fidelity_trader.portfolio.closed_positions import ClosedPositionsAPI
 from fidelity_trader.portfolio.loaned_securities import LoanedSecuritiesAPI
@@ -81,6 +82,7 @@ class FidelityClient:
         self.staged_orders = StagedOrderAPI(self._http)
         self.price_triggers = PriceTriggersAPI(self._http)
         self.conditional_orders = ConditionalOrderAPI(self._http)
+        self.screener = ScreenerAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.

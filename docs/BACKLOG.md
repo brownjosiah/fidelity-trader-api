@@ -76,8 +76,8 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 | 2.4 | **Watchlist CRUD** | `retail-watchlist/v1/.../save` | Medium | PARTIAL | save_watchlist() added — create/delete still TODO |
 | 2.5 | **Alerts CRUD** | Likely same ecawsgateway SOAP | Medium | TODO | Create/edit/delete alerts (we only have subscribe) |
 | 2.6 | **Full priced option chain** | Different fastquote endpoint or params | Medium | TODO | Live bid/ask for all strikes (chainLite is summary only) |
-| 2.7 | **Margin details** | Unknown | Medium | TODO | Margin requirements, buying power breakdown |
-| 2.8 | **Stock/option screener** | Unknown | Medium | TODO | Scanner/screener functionality from Trader+ |
+| 2.7 | **Margin details** | `balance/detail/v2` (enhanced models) | Medium | DONE | MarginDetail, OptionsDetail, ShortDetail, BondDetail, SimplifiedMarginDetail added to existing BalancesAPI |
+| 2.8 | **Stock/option screener** | LiveVol `ExecuteScan` via SAML auth | Medium | DONE | 3-step SAML auth + XML scan results from fidelity.apps.livevol.com |
 | 2.9 | **News feed WebSocket** | `fid-str.newsedge.net:443` | Medium | TODO | We have auth token but not the actual news stream protocol |
 | 2.10 | **Fundamentals/company data** | Unknown (dpservice or fastquote) | Medium | TODO | Revenue, EPS, P/E, sector, company profile data |
 | 2.11 | **Analyst ratings** | Unknown | Low | TODO | Buy/sell/hold consensus ratings |
