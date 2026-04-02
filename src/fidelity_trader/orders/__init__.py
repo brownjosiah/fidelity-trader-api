@@ -3,5 +3,6 @@ from fidelity_trader.orders.equity import EquityOrderAPI
 from fidelity_trader.orders.options import MultiLegOptionOrderAPI
 from fidelity_trader.orders.cancel import OrderCancelAPI
 from fidelity_trader.orders.staged import StagedOrderAPI
+from fidelity_trader.orders.conditional import ConditionalOrderAPI
 
-__all__ = ["OrderStatusAPI", "EquityOrderAPI", "MultiLegOptionOrderAPI", "OrderCancelAPI", "StagedOrderAPI"]
+__all__ = ["OrderStatusAPI", "EquityOrderAPI", "MultiLegOptionOrderAPI", "OrderCancelAPI", "StagedOrderAPI", "ConditionalOrderAPI"]

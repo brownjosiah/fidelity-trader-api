@@ -13,6 +13,7 @@ from fidelity_trader.orders.cancel import OrderCancelAPI
 from fidelity_trader.orders.single_option import SingleOptionOrderAPI
 from fidelity_trader.orders.cancel_replace import CancelReplaceAPI
 from fidelity_trader.orders.staged import StagedOrderAPI
+from fidelity_trader.orders.conditional import ConditionalOrderAPI
 from fidelity_trader.research.data import ResearchAPI
 from fidelity_trader.research.search import SearchAPI
 from fidelity_trader.streaming.news import StreamingNewsAPI
@@ -79,6 +80,7 @@ class FidelityClient:
         self.holiday_calendar = HolidayCalendarAPI(self._http)
         self.staged_orders = StagedOrderAPI(self._http)
         self.price_triggers = PriceTriggersAPI(self._http)
+        self.conditional_orders = ConditionalOrderAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:
         """Authenticate with Fidelity and establish a session.

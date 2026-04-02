@@ -7,14 +7,21 @@ import respx
 
 from fidelity_trader._http import DPSERVICE_URL
 from fidelity_trader.models.watchlist import (
+    SavedSecurity,
+    SavedWatchlist,
+    SysMsg,
     Watchlist,
     WatchlistResponse,
+    WatchlistSaveResponse,
     WatchlistSecurity,
 )
 from fidelity_trader.watchlists.watchlists import WatchlistAPI
 
 _WATCHLIST_URL = (
     f"{DPSERVICE_URL}/ftgw/dp/retail-watchlist/v1/customers/watchlists/get"
+)
+_WATCHLIST_SAVE_URL = (
+    f"{DPSERVICE_URL}/ftgw/dp/retail-watchlist/v1/customers/watchlists/save"
 )
 
 
@@ -380,3 +387,262 @@ class TestWatchlistAPI:
         api = WatchlistAPI(client)
         result = api.get_watchlists()
         assert result.watchlists == []
+
+
+# ===========================================================================
+# Save watchlist helpers
+# ===========================================================================
+
+def _make_save_request_detail(
+    watchlist_id: str = "3842df22-6fc3-40d6-998f-e5994e93014e",
+    name: str = "Buys",
+    symbols: list[str] | None = None,
+) -> dict:
+    if symbols is None:
+        symbols = ["ES", "AAPL"]
+    securities = [
+        {
+            "symbol": sym,
+            "shareQuantity": "0",
+            "rankId": str(i + 1),
+            "priceDetail": {"purchasePrice": 0},
+            "securityId": f"sec-id-{i}",
+        }
+        for i, sym in enumerate(symbols)
+    ]
+    return {
+        "watchListName": name,
+        "productCode": "WL",
+        "isDefault": True,
+        "watchListId": watchlist_id,
+        "watchListTypeCode": "WL",
+        "securityDetails": securities,
+    }
+
+
+def _make_save_api_response(
+    watchlist_id: str = "3842df22-6fc3-40d6-998f-e5994e93014e",
+    symbols: list[str] | None = None,
+    code: str = "2000",
+    message: str = "Request Successful",
+) -> dict:
+    if symbols is None:
+        symbols = ["ES", "AAPL"]
+    return {
+        "sysMsgs": {
+            "sysMsg": [
+                {
+                    "message": message,
+                    "detail": "Watchlists successfully saved for user: testuser",
+                    "source": "",
+                    "code": code,
+                    "type": "",
+                }
+            ]
+        },
+        "watchListDetails": [
+            {
+                "watchListId": watchlist_id,
+                "securityDetails": [
+                    {
+                        "securityId": f"sec-id-{i}",
+                        "rankId": i + 1,
+                        "symbol": sym,
+                    }
+                    for i, sym in enumerate(symbols)
+                ],
+            }
+        ],
+    }
+
+
+# ---------------------------------------------------------------------------
+# WatchlistSaveResponse — from_api_response / is_success
+# ---------------------------------------------------------------------------
+
+class TestWatchlistSaveResponse:
+    def test_from_api_response_parses_sys_msgs(self):
+        raw = _make_save_api_response()
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert len(resp.sys_msgs) == 1
+        assert resp.sys_msgs[0].message == "Request Successful"
+        assert resp.sys_msgs[0].code == "2000"
+        assert resp.sys_msgs[0].detail == "Watchlists successfully saved for user: testuser"
+
+    def test_from_api_response_parses_watchlist_details(self):
+        raw = _make_save_api_response(symbols=["ES", "AAPL"])
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert len(resp.watchlist_details) == 1
+        wl = resp.watchlist_details[0]
+        assert wl.watchlist_id == "3842df22-6fc3-40d6-998f-e5994e93014e"
+        assert len(wl.security_details) == 2
+        assert wl.security_details[0].symbol == "ES"
+        assert wl.security_details[1].symbol == "AAPL"
+
+    def test_is_success_true_for_code_2000(self):
+        raw = _make_save_api_response(code="2000")
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.is_success is True
+
+    def test_is_success_false_for_non_2000_code(self):
+        raw = _make_save_api_response(code="5000")
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.is_success is False
+
+    def test_is_success_false_when_no_sys_msgs(self):
+        raw = {"sysMsgs": {}, "watchListDetails": []}
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.is_success is False
+
+    def test_is_success_false_for_missing_sysMsgs_key(self):
+        raw = {"watchListDetails": []}
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.is_success is False
+
+    def test_empty_watchlist_details(self):
+        raw = {
+            "sysMsgs": {"sysMsg": [{"message": "ok", "code": "2000"}]},
+            "watchListDetails": [],
+        }
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.watchlist_details == []
+        assert resp.is_success is True
+
+    def test_security_rank_ids_are_ints(self):
+        raw = _make_save_api_response(symbols=["ES", "AAPL", "GOOG"])
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        ranks = [s.rank_id for s in resp.watchlist_details[0].security_details]
+        assert ranks == [1, 2, 3]
+        assert all(isinstance(r, int) for r in ranks)
+
+    def test_real_captured_traffic_shape(self):
+        """Validate against the exact shape from the captured save traffic."""
+        raw = {
+            "sysMsgs": {
+                "sysMsg": [
+                    {
+                        "message": "Request Successful",
+                        "detail": "Watchlists successfully saved for user: ...",
+                        "source": "",
+                        "code": "2000",
+                        "type": "",
+                    }
+                ]
+            },
+            "watchListDetails": [
+                {
+                    "watchListId": "3842df22-6fc3-40d6-998f-e5994e93014e",
+                    "securityDetails": [
+                        {
+                            "securityId": "4a9d952d-0340-4bb7-a3dd-3c106289c2d6",
+                            "rankId": 1,
+                            "symbol": "ES",
+                        },
+                        {
+                            "securityId": "uuid-here",
+                            "rankId": 2,
+                            "symbol": "AAPL",
+                        },
+                    ],
+                }
+            ],
+        }
+        resp = WatchlistSaveResponse.from_api_response(raw)
+        assert resp.is_success is True
+        assert len(resp.watchlist_details) == 1
+        wl = resp.watchlist_details[0]
+        assert wl.watchlist_id == "3842df22-6fc3-40d6-998f-e5994e93014e"
+        assert wl.security_details[0].symbol == "ES"
+        assert wl.security_details[0].security_id == "4a9d952d-0340-4bb7-a3dd-3c106289c2d6"
+        assert wl.security_details[1].symbol == "AAPL"
+        assert wl.security_details[1].rank_id == 2
+
+
+# ---------------------------------------------------------------------------
+# WatchlistAPI.save_watchlist — HTTP layer (mocked)
+# ---------------------------------------------------------------------------
+
+class TestWatchlistAPISave:
+    @respx.mock
+    def test_save_watchlist_posts_to_correct_url(self):
+        raw = _make_save_api_response()
+        route = respx.post(_WATCHLIST_SAVE_URL).mock(
+            return_value=httpx.Response(200, json=raw)
+        )
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        api.save_watchlist(_make_save_request_detail())
+        assert route.called
+
+    @respx.mock
+    def test_save_watchlist_wraps_single_dict_in_list(self):
+        raw = _make_save_api_response()
+        route = respx.post(_WATCHLIST_SAVE_URL).mock(
+            return_value=httpx.Response(200, json=raw)
+        )
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        detail = _make_save_request_detail()
+        api.save_watchlist(detail)
+
+        sent_body = json.loads(route.calls[0].request.content)
+        assert isinstance(sent_body["watchListDetails"], list)
+        assert len(sent_body["watchListDetails"]) == 1
+        assert sent_body["watchListDetails"][0]["watchListName"] == "Buys"
+
+    @respx.mock
+    def test_save_watchlist_passes_list_directly(self):
+        raw = _make_save_api_response()
+        route = respx.post(_WATCHLIST_SAVE_URL).mock(
+            return_value=httpx.Response(200, json=raw)
+        )
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        details = [
+            _make_save_request_detail(name="List A"),
+            _make_save_request_detail(watchlist_id="other-id", name="List B"),
+        ]
+        api.save_watchlist(details)
+
+        sent_body = json.loads(route.calls[0].request.content)
+        assert len(sent_body["watchListDetails"]) == 2
+        assert sent_body["watchListDetails"][0]["watchListName"] == "List A"
+        assert sent_body["watchListDetails"][1]["watchListName"] == "List B"
+
+    @respx.mock
+    def test_save_watchlist_request_body_contains_security_details(self):
+        raw = _make_save_api_response()
+        route = respx.post(_WATCHLIST_SAVE_URL).mock(
+            return_value=httpx.Response(200, json=raw)
+        )
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        api.save_watchlist(_make_save_request_detail(symbols=["ES", "AAPL"]))
+
+        sent_body = json.loads(route.calls[0].request.content)
+        secs = sent_body["watchListDetails"][0]["securityDetails"]
+        assert len(secs) == 2
+        assert secs[0]["symbol"] == "ES"
+        assert secs[1]["symbol"] == "AAPL"
+        assert secs[0]["shareQuantity"] == "0"
+        assert secs[0]["priceDetail"] == {"purchasePrice": 0}
+
+    @respx.mock
+    def test_save_watchlist_returns_save_response(self):
+        raw = _make_save_api_response()
+        respx.post(_WATCHLIST_SAVE_URL).mock(
+            return_value=httpx.Response(200, json=raw)
+        )
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        result = api.save_watchlist(_make_save_request_detail())
+        assert isinstance(result, WatchlistSaveResponse)
+        assert result.is_success is True
+
+    @respx.mock
+    def test_save_watchlist_raises_on_http_error(self):
+        respx.post(_WATCHLIST_SAVE_URL).mock(return_value=httpx.Response(401))
+        client = httpx.Client()
+        api = WatchlistAPI(client)
+        with pytest.raises(httpx.HTTPStatusError):
+            api.save_watchlist(_make_save_request_detail())

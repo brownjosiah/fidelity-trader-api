@@ -72,8 +72,8 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 |---|---------|-------------------|----------|--------|-------|
 | 2.1 | **Single-leg option orders** | `orderentry/option/preview+place/v2` | **High** | CAPTURED | Captured 2026-04-02 in `fidelity_trading_capture.flow` — ready to implement |
 | 2.2 | **Order modification** | `orderentry/cancelandreplace/preview+place/v1` | **High** | CAPTURED | Cancel-and-replace workflow captured 2026-04-02 — ready to implement |
-| 2.3 | **Conditional/triggered orders** | Unknown — may use price-triggers API | **High** | TODO | Stop-loss, OCO, bracket orders — backlogged, needs future capture session |
-| 2.4 | **Watchlist CRUD** | `retail-watchlist/v1/.../create/update/delete` | Medium | TODO | We can read watchlists but not create/modify/delete |
+| 2.3 | **Conditional/triggered orders** | `orderentry/conditional/preview+place/v1` | **High** | DONE | OTOCO/OTO/OCO with stop + limit legs — captured 2026-04-02 |
+| 2.4 | **Watchlist CRUD** | `retail-watchlist/v1/.../save` | Medium | PARTIAL | save_watchlist() added — create/delete still TODO |
 | 2.5 | **Alerts CRUD** | Likely same ecawsgateway SOAP | Medium | TODO | Create/edit/delete alerts (we only have subscribe) |
 | 2.6 | **Full priced option chain** | Different fastquote endpoint or params | Medium | TODO | Live bid/ask for all strikes (chainLite is summary only) |
 | 2.7 | **Margin details** | Unknown | Medium | TODO | Margin requirements, buying power breakdown |

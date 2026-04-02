@@ -36,6 +36,7 @@ from fidelity_trader.auth.session_keepalive import SessionKeepAliveAPI
 from fidelity_trader.reference.holiday_calendar import HolidayCalendarAPI
 from fidelity_trader.orders.staged import StagedOrderAPI
 from fidelity_trader.alerts.price_triggers import PriceTriggersAPI
+from fidelity_trader.orders.conditional import ConditionalOrderAPI
 from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
@@ -75,6 +76,7 @@ def test_client_has_all_module_attributes():
         assert isinstance(client.holiday_calendar, HolidayCalendarAPI)
         assert isinstance(client.staged_orders, StagedOrderAPI)
         assert isinstance(client.price_triggers, PriceTriggersAPI)
+        assert isinstance(client.conditional_orders, ConditionalOrderAPI)
     finally:
         client.close()
 
@@ -112,6 +114,7 @@ def test_all_modules_share_same_http_client():
         assert client.holiday_calendar._http is http
         assert client.staged_orders._http is http
         assert client.price_triggers._http is http
+        assert client.conditional_orders._http is http
     finally:
         client.close()
 
