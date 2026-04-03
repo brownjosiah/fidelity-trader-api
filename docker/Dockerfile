@@ -1,7 +1,7 @@
 # --- Build stage ---
 FROM python:3.12-slim AS build
 WORKDIR /app
-COPY pyproject.toml .
+COPY pyproject.toml README.md ./
 COPY src/ src/
 COPY service/ service/
 RUN pip install --no-cache-dir ".[service]"
@@ -19,6 +19,7 @@ RUN useradd -m -r ftservice && \
     chown -R ftservice:ftservice /app/data
 USER ftservice
 
+ENV FTSERVICE_HOST=0.0.0.0
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8787/health')" || exit 1
