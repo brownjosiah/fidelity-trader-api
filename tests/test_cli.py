@@ -11,6 +11,7 @@ from typer.testing import CliRunner
 
 from fidelity_trader.cli import app
 from fidelity_trader.cli._config import get_config_dir, SESSION_FILE_NAME
+from tests.conftest import strip_ansi
 from fidelity_trader.cli._errors import handle_errors
 from fidelity_trader.cli._output import _format_currency, _format_number, _format_pct
 from fidelity_trader.cli._session import (
@@ -38,15 +39,17 @@ class TestHelpOutput:
     def test_root_help(self):
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "Fidelity Trader+" in result.output
-        assert "login" in result.output
-        assert "positions" in result.output
+        output = strip_ansi(result.output)
+        assert "Fidelity Trader+" in output
+        assert "login" in output
+        assert "positions" in output
 
     def test_login_help(self):
         result = runner.invoke(app, ["login", "--help"])
         assert result.exit_code == 0
-        assert "--username" in result.output
-        assert "--password" in result.output
+        output = strip_ansi(result.output)
+        assert "--username" in output
+        assert "--password" in output
 
     def test_logout_help(self):
         result = runner.invoke(app, ["logout", "--help"])
@@ -63,12 +66,12 @@ class TestHelpOutput:
     def test_positions_help(self):
         result = runner.invoke(app, ["positions", "--help"])
         assert result.exit_code == 0
-        assert "ACCOUNT" in result.output
+        assert "ACCOUNT" in strip_ansi(result.output)
 
     def test_balances_help(self):
         result = runner.invoke(app, ["balances", "--help"])
         assert result.exit_code == 0
-        assert "ACCOUNT" in result.output
+        assert "ACCOUNT" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -290,7 +293,7 @@ class TestLoginCommand:
 
         result = runner.invoke(app, ["login", "--username", "user", "--password", "pass"])
         assert result.exit_code == 0
-        assert "Login successful" in result.output
+        assert "Login successful" in strip_ansi(result.output)
         mock_client.login.assert_called_once_with("user", "pass", totp_secret=None)
         mock_save.assert_called_once()
 
@@ -321,7 +324,7 @@ class TestLogoutCommand:
 
         result = runner.invoke(app, ["logout"])
         assert result.exit_code == 0
-        assert "Logged out" in result.output
+        assert "Logged out" in strip_ansi(result.output)
 
     @patch("fidelity_trader.cli._auth.get_client")
     @patch("fidelity_trader.cli._auth.delete_session", return_value=False)
@@ -329,7 +332,7 @@ class TestLogoutCommand:
         mock_get_client.side_effect = FileNotFoundError()
         result = runner.invoke(app, ["logout"])
         assert result.exit_code == 0
-        assert "No active session" in result.output
+        assert "No active session" in strip_ansi(result.output)
 
 
 class TestAccountsCommand:
@@ -348,7 +351,7 @@ class TestAccountsCommand:
 
         result = runner.invoke(app, ["accounts"])
         assert result.exit_code == 0
-        assert "Z12345678" in result.output
+        assert "Z12345678" in strip_ansi(result.output)
 
     @patch("fidelity_trader.cli._portfolio.get_client")
     def test_accounts_json_output(self, mock_get_client):
@@ -361,7 +364,7 @@ class TestAccountsCommand:
 
         result = runner.invoke(app, ["--format", "json", "accounts"])
         assert result.exit_code == 0
-        assert "Z12345678" in result.output
+        assert "Z12345678" in strip_ansi(result.output)
 
 
 class TestPositionsCommand:
@@ -389,7 +392,7 @@ class TestPositionsCommand:
 
         result = runner.invoke(app, ["positions", "Z12345678"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
 
 class TestBalancesCommand:
@@ -421,4 +424,4 @@ class TestBalancesCommand:
 
         result = runner.invoke(app, ["balances", "Z12345678"])
         assert result.exit_code == 0
-        assert "Z12345678" in result.output
+        assert "Z12345678" in strip_ansi(result.output)

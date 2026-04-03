@@ -8,6 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from fidelity_trader.cli import app
+from tests.conftest import strip_ansi
 from fidelity_trader.models.equity_order import (
     EquityOrderConfirmDetail,
     EquityEstCommissionDetail,
@@ -35,57 +36,63 @@ class TestOrderHelpOutput:
     def test_orders_help(self):
         result = runner.invoke(app, ["orders", "--help"])
         assert result.exit_code == 0
-        assert "ACCOUNT" in result.output
+        assert "ACCOUNT" in strip_ansi(result.output)
 
     def test_buy_help(self):
         result = runner.invoke(app, ["buy", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.output
-        assert "--live" in result.output
-        assert "--stop" in result.output
-        assert "--tif" in result.output
-        assert "SYMBOL" in result.output
-        assert "QTY" in result.output
+        output = strip_ansi(result.output)
+        assert "--limit" in output
+        assert "--live" in output
+        assert "--stop" in output
+        assert "--tif" in output
+        assert "SYMBOL" in output
+        assert "QTY" in output
 
     def test_sell_help(self):
         result = runner.invoke(app, ["sell", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.output
-        assert "--live" in result.output
-        assert "SYMBOL" in result.output
-        assert "QTY" in result.output
+        output = strip_ansi(result.output)
+        assert "--limit" in output
+        assert "--live" in output
+        assert "SYMBOL" in output
+        assert "QTY" in output
 
     def test_cancel_help(self):
         result = runner.invoke(app, ["cancel", "--help"])
         assert result.exit_code == 0
-        assert "CONF_NUM" in result.output
-        assert "--account" in result.output
+        output = strip_ansi(result.output)
+        assert "CONF_NUM" in output
+        assert "--account" in output
 
 
 class TestOptionsHelpOutput:
     def test_options_help(self):
         result = runner.invoke(app, ["options", "--help"])
         assert result.exit_code == 0
-        assert "chain" in result.output
-        assert "buy" in result.output
-        assert "sell" in result.output
+        output = strip_ansi(result.output)
+        assert "chain" in output
+        assert "buy" in output
+        assert "sell" in output
 
     def test_options_chain_help(self):
         result = runner.invoke(app, ["options", "chain", "--help"])
         assert result.exit_code == 0
-        assert "SYMBOL" in result.output
+        assert "SYMBOL" in strip_ansi(result.output)
 
     def test_options_buy_help(self):
         result = runner.invoke(app, ["options", "buy", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.output
-        assert "--live" in result.output
+        output = strip_ansi(result.output)
+        assert "--limit" in output
+        assert "--live" in output
 
     def test_options_sell_help(self):
         result = runner.invoke(app, ["options", "sell", "--help"])
         assert result.exit_code == 0
-        assert "--limit" in result.output
-        assert "--live" in result.output
+        output = strip_ansi(result.output)
+        assert "--limit" in output
+        assert "--live" in output
 
 
 # ---------------------------------------------------------------------------
@@ -97,11 +104,12 @@ class TestRootHelpIncludesOrders:
     def test_root_help_shows_order_commands(self):
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
-        assert "buy" in result.output
-        assert "sell" in result.output
-        assert "orders" in result.output
-        assert "cancel" in result.output
-        assert "options" in result.output
+        output = strip_ansi(result.output)
+        assert "buy" in output
+        assert "sell" in output
+        assert "orders" in output
+        assert "cancel" in output
+        assert "options" in output
 
 
 # ---------------------------------------------------------------------------
@@ -132,8 +140,9 @@ class TestBuyDryRun:
 
         result = runner.invoke(app, ["buy", "AAPL", "10", "--limit", "175.00"])
         assert result.exit_code == 0
-        assert "Order Preview" in result.output
-        assert "Dry-run mode" in result.output
+        output = strip_ansi(result.output)
+        assert "Order Preview" in output
+        assert "Dry-run mode" in output
         # Should NOT have called place_order
         mock_client.equity_orders.place_order.assert_not_called()
         # get_client should have been called with live_trading=True
@@ -159,8 +168,9 @@ class TestBuyDryRun:
 
         result = runner.invoke(app, ["buy", "MSFT", "5"])
         assert result.exit_code == 0
-        assert "Market" in result.output
-        assert "Dry-run mode" in result.output
+        output = strip_ansi(result.output)
+        assert "Market" in output
+        assert "Dry-run mode" in output
 
 
 # ---------------------------------------------------------------------------
@@ -199,8 +209,9 @@ class TestBuyLive:
         # Answer "y" to the confirmation prompt
         result = runner.invoke(app, ["buy", "AAPL", "5", "--live"], input="y\n")
         assert result.exit_code == 0
-        assert "Order placed" in result.output
-        assert "24A0LIVE" in result.output
+        output = strip_ansi(result.output)
+        assert "Order placed" in output
+        assert "24A0LIVE" in output
         mock_client.equity_orders.place_order.assert_called_once()
 
     @patch("fidelity_trader.cli._orders.get_client")
@@ -224,7 +235,7 @@ class TestBuyLive:
         # Answer "n" to the confirmation prompt
         result = runner.invoke(app, ["buy", "AAPL", "5", "--live"], input="n\n")
         assert result.exit_code == 0
-        assert "Order cancelled" in result.output
+        assert "Order cancelled" in strip_ansi(result.output)
         mock_client.equity_orders.place_order.assert_not_called()
 
     @patch("fidelity_trader.cli._orders.get_client")
@@ -257,7 +268,7 @@ class TestBuyLive:
         # No input needed -- --yes skips the prompt
         result = runner.invoke(app, ["buy", "AAPL", "5", "--live", "--yes"])
         assert result.exit_code == 0
-        assert "Order placed" in result.output
+        assert "Order placed" in strip_ansi(result.output)
         mock_client.equity_orders.place_order.assert_called_once()
 
 
@@ -287,7 +298,7 @@ class TestSellDryRun:
 
         result = runner.invoke(app, ["sell", "AAPL", "10", "--limit", "175.00"])
         assert result.exit_code == 0
-        assert "Dry-run mode" in result.output
+        assert "Dry-run mode" in strip_ansi(result.output)
         mock_client.equity_orders.place_order.assert_not_called()
 
         # Verify the order was built with action code "S"
@@ -322,7 +333,7 @@ class TestCancelCommand:
 
         result = runner.invoke(app, ["cancel", "24A0CNCL"])
         assert result.exit_code == 0
-        assert "cancelled" in result.output
+        assert "cancelled" in strip_ansi(result.output)
         # Cancel does not require live_trading -- verify get_client() called without it
         mock_get_client.assert_called_once_with()
 
@@ -345,7 +356,7 @@ class TestOrdersCommand:
 
         result = runner.invoke(app, ["orders"])
         assert result.exit_code == 0
-        assert "No open or recent orders" in result.output
+        assert "No open or recent orders" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -369,7 +380,7 @@ class TestOptionsChainCommand:
 
         result = runner.invoke(app, ["options", "chain", "AAPL"])
         assert result.exit_code == 0
-        assert "No options found" in result.output
+        assert "No options found" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -401,8 +412,9 @@ class TestOptionsBuyDryRun:
             "options", "buy", "AAPL250418C00170000", "1", "--limit", "2.50",
         ])
         assert result.exit_code == 0
-        assert "Option Order Preview" in result.output
-        assert "Dry-run mode" in result.output
+        output = strip_ansi(result.output)
+        assert "Option Order Preview" in output
+        assert "Dry-run mode" in output
         mock_client.single_option_orders.place_order.assert_not_called()
 
         # Verify the order was built with action code "BC" (Buy Call)
@@ -432,7 +444,7 @@ class TestOptionsBuyDryRun:
             "options", "buy", "AAPL250418P00170000", "1", "--limit", "1.50",
         ])
         assert result.exit_code == 0
-        assert "Dry-run mode" in result.output
+        assert "Dry-run mode" in strip_ansi(result.output)
 
         # Verify action code is "BP" (Buy Put)
         call_args = mock_client.single_option_orders.preview_order.call_args
@@ -468,7 +480,7 @@ class TestOptionsSellDryRun:
             "options", "sell", "AAPL250418C00170000", "1", "--limit", "2.50",
         ])
         assert result.exit_code == 0
-        assert "Dry-run mode" in result.output
+        assert "Dry-run mode" in strip_ansi(result.output)
 
         # Verify action code is "SC" (Sell Call)
         call_args = mock_client.single_option_orders.preview_order.call_args

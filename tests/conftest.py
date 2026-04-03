@@ -1,7 +1,14 @@
+import re
+
 import httpx
 import pytest
 
 from fidelity_trader._http import BASE_URL, AUTH_URL
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text so assertions work in non-TTY (CI)."""
+    return re.sub(r'\x1b\[[0-9;]*m', '', text)
 
 @pytest.fixture
 def mock_http():

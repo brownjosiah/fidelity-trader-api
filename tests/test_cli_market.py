@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 
 from fidelity_trader.cli import app
+from tests.conftest import strip_ansi
 
 runner = CliRunner()
 
@@ -20,34 +21,36 @@ class TestHelpOutput:
     def test_quote_help(self):
         result = runner.invoke(app, ["quote", "--help"])
         assert result.exit_code == 0
-        assert "SYMBOLS" in result.output
+        assert "SYMBOLS" in strip_ansi(result.output)
 
     def test_chart_help(self):
         result = runner.invoke(app, ["chart", "--help"])
         assert result.exit_code == 0
-        assert "--bars" in result.output
-        assert "--days" in result.output
+        output = strip_ansi(result.output)
+        assert "--bars" in output
+        assert "--days" in output
 
     def test_search_help(self):
         result = runner.invoke(app, ["search", "--help"])
         assert result.exit_code == 0
-        assert "QUERY" in result.output
+        assert "QUERY" in strip_ansi(result.output)
 
     def test_earnings_help(self):
         result = runner.invoke(app, ["earnings", "--help"])
         assert result.exit_code == 0
-        assert "SYMBOLS" in result.output
+        assert "SYMBOLS" in strip_ansi(result.output)
 
     def test_dividends_help(self):
         result = runner.invoke(app, ["dividends", "--help"])
         assert result.exit_code == 0
-        assert "SYMBOLS" in result.output
+        assert "SYMBOLS" in strip_ansi(result.output)
 
     def test_stream_help(self):
         result = runner.invoke(app, ["stream", "--help"])
         assert result.exit_code == 0
-        assert "--fields" in result.output
-        assert "SYMBOLS" in result.output
+        output = strip_ansi(result.output)
+        assert "--fields" in output
+        assert "SYMBOLS" in output
 
 
 # ---------------------------------------------------------------------------
@@ -79,7 +82,7 @@ class TestQuoteCommand:
 
         result = runner.invoke(app, ["quote", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
     @patch("fidelity_trader.cli._market_data.get_client")
     def test_quote_multiple_symbols(self, mock_get_client):
@@ -109,8 +112,9 @@ class TestQuoteCommand:
 
         result = runner.invoke(app, ["quote", "AAPL", "MSFT"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
-        assert "MSFT" in result.output
+        output = strip_ansi(result.output)
+        assert "AAPL" in output
+        assert "MSFT" in output
 
     @patch("fidelity_trader.cli._market_data.get_client")
     def test_quote_json_output(self, mock_get_client):
@@ -135,7 +139,7 @@ class TestQuoteCommand:
 
         result = runner.invoke(app, ["--format", "json", "quote", "SPY"])
         assert result.exit_code == 0
-        assert "SPY" in result.output
+        assert "SPY" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +173,7 @@ class TestChartCommand:
 
         result = runner.invoke(app, ["chart", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
     @patch("fidelity_trader.cli._market_data.get_client")
     def test_chart_with_bars_and_days(self, mock_get_client):
@@ -220,8 +224,9 @@ class TestSearchCommand:
 
         result = runner.invoke(app, ["search", "apple"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
-        assert "APPLE" in result.output
+        output = strip_ansi(result.output)
+        assert "AAPL" in output
+        assert "APPLE" in output
 
     @patch("fidelity_trader.cli._market_data.get_client")
     def test_search_no_results(self, mock_get_client):
@@ -255,7 +260,7 @@ class TestSearchCommand:
 
         result = runner.invoke(app, ["--format", "json", "search", "microsoft"])
         assert result.exit_code == 0
-        assert "MSFT" in result.output
+        assert "MSFT" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -298,8 +303,9 @@ class TestEarningsCommand:
 
         result = runner.invoke(app, ["earnings", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
-        assert "Q1 2026" in result.output
+        output = strip_ansi(result.output)
+        assert "AAPL" in output
+        assert "Q1 2026" in output
 
     @patch("fidelity_trader.cli._research.get_client")
     def test_earnings_json_output(self, mock_get_client):
@@ -317,7 +323,7 @@ class TestEarningsCommand:
 
         result = runner.invoke(app, ["--format", "json", "earnings", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -357,7 +363,7 @@ class TestDividendsCommand:
 
         result = runner.invoke(app, ["dividends", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
     @patch("fidelity_trader.cli._research.get_client")
     def test_dividends_json_output(self, mock_get_client):
@@ -375,7 +381,7 @@ class TestDividendsCommand:
 
         result = runner.invoke(app, ["--format", "json", "dividends", "AAPL"])
         assert result.exit_code == 0
-        assert "AAPL" in result.output
+        assert "AAPL" in strip_ansi(result.output)
 
 
 # ---------------------------------------------------------------------------
@@ -387,5 +393,6 @@ class TestRootHelp:
     def test_new_commands_in_root_help(self):
         result = runner.invoke(app, ["--help"])
         assert result.exit_code == 0
+        output = strip_ansi(result.output)
         for cmd in ("quote", "chart", "search", "earnings", "dividends", "stream"):
-            assert cmd in result.output, f"'{cmd}' not found in --help output"
+            assert cmd in output, f"'{cmd}' not found in --help output"
