@@ -16,15 +16,107 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[service]"
       - run: python scripts/export_openapi.py openapi.json
-      - name: Attach openapi.json to release
+      - run: python scripts/export_openapi.py openapi-3.0.json --downgrade
+      - name: Attach specs to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${GITHUB_REF#refs/tags/}" openapi.json --clobber
+        run: |
+          gh release upload "${GITHUB_REF#refs/tags/}" openapi.json --clobber
+          gh release upload "${GITHUB_REF#refs/tags/}" openapi-3.0.json --clobber
+
+  clients:
+    needs: openapi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Export specs
+      - run: pip install -e ".[service]"
+      - run: python scripts/export_openapi.py openapi.json
+      - run: python scripts/export_openapi.py openapi-3.0.json --downgrade
+
+      # Generate Go client
+      - run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+      - run: |
+          mkdir -p clients/go
+          oapi-codegen --package fidelitytrader --generate types,client \
+            openapi-3.0.json > clients/go/client.gen.go
+
+      # Generate TypeScript client
+      - run: |
+          mkdir -p clients/typescript/src
+          npx openapi-typescript openapi.json -o clients/typescript/src/types.ts
+
+      # Package and attach
+      - run: |
+          tar czf fidelity-trader-api-go-client.tar.gz -C clients/go .
+          tar czf fidelity-trader-api-ts-client.tar.gz -C clients/typescript .
+      - name: Attach clients to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${GITHUB_REF#refs/tags/}" \
+            fidelity-trader-api-go-client.tar.gz \
+            fidelity-trader-api-ts-client.tar.gz \
+            --clobber
+
+  cli-binaries:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: ft-linux-amd64
+          - os: macos-latest
+            artifact: ft-macos-amd64
+          - os: windows-latest
+            artifact: ft-windows-amd64.exe
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[cli]" pyinstaller
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --name ${{ matrix.artifact }} \
+            --hidden-import fidelity_trader.cli \
+            --hidden-import fidelity_trader.cli._app \
+            --hidden-import fidelity_trader.cli._auth \
+            --hidden-import fidelity_trader.cli._portfolio \
+            --hidden-import fidelity_trader.cli._orders \
+            --hidden-import fidelity_trader.cli._options \
+            --hidden-import fidelity_trader.cli._market_data \
+            --hidden-import fidelity_trader.cli._research \
+            --hidden-import fidelity_trader.cli._stream \
+            --hidden-import fidelity_trader.cli._session \
+            --hidden-import fidelity_trader.cli._output \
+            --hidden-import fidelity_trader.cli._errors \
+            --hidden-import fidelity_trader.cli._config \
+            --collect-all fidelity_trader \
+            src/fidelity_trader/cli/__init__.py
+      - name: Attach binary to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF#refs/tags/}" dist/${{ matrix.artifact }} --clobber
 
   pypi:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write  # trusted publishing
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
