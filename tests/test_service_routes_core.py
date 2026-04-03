@@ -197,26 +197,30 @@ class TestAccountsEndpoint:
 class TestPositionsEndpoint:
     async def test_get_positions(self, client, mock_client):
         mock_client.positions.get_positions.return_value = _mock_response(
-            positions=[{"symbol": "AAPL", "qty": 100}]
+            accounts=[{
+                "acctNum": "Z12345678",
+                "accountPositionCount": 1,
+                "positions": [{"symbol": "AAPL", "quantity": 100}],
+            }]
         )
         resp = await client.get("/api/v1/accounts/Z12345678/positions")
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["positions"][0]["symbol"] == "AAPL"
+        assert body["data"]["accounts"][0]["positions"][0]["symbol"] == "AAPL"
         mock_client.positions.get_positions.assert_called_once_with(["Z12345678"])
 
 
 class TestBalancesEndpoint:
     async def test_get_balances(self, client, mock_client):
         mock_client.balances.get_balances.return_value = _mock_response(
-            total_value=50000.0
+            accounts=[{"acctNum": "Z12345678"}]
         )
         resp = await client.get("/api/v1/accounts/Z12345678/balances")
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["total_value"] == 50000.0
+        assert body["data"]["accounts"][0]["acctNum"] == "Z12345678"
         mock_client.balances.get_balances.assert_called_once_with(["Z12345678"])
 
 
@@ -225,13 +229,17 @@ class TestBalancesEndpoint:
 class TestOrderStatusEndpoint:
     async def test_get_order_status(self, client, mock_client):
         mock_client.order_status.get_order_status.return_value = _mock_response(
-            orders=[{"confNum": "ABC123", "status": "OPEN"}]
+            orders=[{
+                "acctNum": "Z12345678",
+                "idDetail": {"confNum": "ABC123"},
+                "statusDetail": {"statusCode": "OPEN"},
+            }]
         )
         resp = await client.get("/api/v1/orders/status?acct_ids=Z12345678")
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["orders"][0]["confNum"] == "ABC123"
+        assert body["data"]["orders"][0]["idDetail"]["confNum"] == "ABC123"
         mock_client.order_status.get_order_status.assert_called_once_with(["Z12345678"])
 
     async def test_get_order_status_multiple_accounts(self, client, mock_client):
@@ -244,7 +252,8 @@ class TestOrderStatusEndpoint:
 class TestEquityPreviewEndpoint:
     async def test_preview_equity_order(self, client, mock_client):
         mock_client.equity_orders.preview_order.return_value = _mock_response(
-            confNum="CONF123", acctNum="Z12345678"
+            acctNum="Z12345678",
+            orderConfirmDetail={"confNum": "CONF123", "respTypeCode": "V"},
         )
         resp = await client.post("/api/v1/orders/equity/preview", json={
             "acctNum": "Z12345678",
@@ -255,14 +264,18 @@ class TestEquityPreviewEndpoint:
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["confNum"] == "CONF123"
+        assert body["data"]["orderConfirmDetail"]["confNum"] == "CONF123"
         mock_client.equity_orders.preview_order.assert_called_once()
 
 
 class TestCancelEndpoint:
     async def test_cancel_order(self, client, mock_client):
         mock_client.cancel_order.cancel_order.return_value = _mock_response(
-            is_accepted=True
+            cancelConfirmDetail=[{
+                "respTypeCode": "A",
+                "confNum": "CONF123",
+                "acctNum": "Z12345678",
+            }]
         )
         resp = await client.post("/api/v1/orders/CONF123/cancel", json={
             "acctNum": "Z12345678",
@@ -271,7 +284,7 @@ class TestCancelEndpoint:
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["is_accepted"] is True
+        assert body["data"]["cancelConfirmDetail"][0]["confNum"] == "CONF123"
         mock_client.cancel_order.cancel_order.assert_called_once_with(
             "CONF123", "Z12345678", "B"
         )

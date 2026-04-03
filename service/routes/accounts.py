@@ -7,34 +7,42 @@ import asyncio
 from fastapi import APIRouter, Depends, Query
 
 from fidelity_trader import FidelityClient
+from fidelity_trader.models.account_detail import AccountsResponse
+from fidelity_trader.models.balance import BalancesResponse
+from fidelity_trader.models.closed_position import ClosedPositionsResponse
+from fidelity_trader.models.loaned_securities import LoanedSecuritiesResponse
+from fidelity_trader.models.option_summary import OptionSummaryResponse
+from fidelity_trader.models.position import PositionsResponse
+from fidelity_trader.models.tax_lot import TaxLotResponse
+from fidelity_trader.models.transaction import TransactionHistoryResponse
 from service.dependencies import get_client
-from service.models.responses import success
+from service.models.responses import APIResponse, success
 
 router = APIRouter(prefix="/api/v1/accounts", tags=["Accounts"])
 
 
-@router.get("")
+@router.get("", response_model=APIResponse[AccountsResponse], response_model_by_alias=True)
 async def discover_accounts(client: FidelityClient = Depends(get_client)):
     """Discover all accounts for the authenticated user."""
     result = await asyncio.to_thread(client.accounts.discover_accounts)
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/positions")
+@router.get("/{acct}/positions", response_model=APIResponse[PositionsResponse], response_model_by_alias=True)
 async def get_positions(acct: str, client: FidelityClient = Depends(get_client)):
     """Fetch positions for a single account."""
     result = await asyncio.to_thread(client.positions.get_positions, [acct])
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/balances")
+@router.get("/{acct}/balances", response_model=APIResponse[BalancesResponse], response_model_by_alias=True)
 async def get_balances(acct: str, client: FidelityClient = Depends(get_client)):
     """Fetch balances for a single account."""
     result = await asyncio.to_thread(client.balances.get_balances, [acct])
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/transactions")
+@router.get("/{acct}/transactions", response_model=APIResponse[TransactionHistoryResponse], response_model_by_alias=True)
 async def get_transactions(
     acct: str,
     from_date: int = Query(..., description="Start date as Unix timestamp (seconds)"),
@@ -48,14 +56,14 @@ async def get_transactions(
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/options-summary")
+@router.get("/{acct}/options-summary", response_model=APIResponse[OptionSummaryResponse], response_model_by_alias=True)
 async def get_option_summary(acct: str, client: FidelityClient = Depends(get_client)):
     """Fetch option positions summary for a single account."""
     result = await asyncio.to_thread(client.option_summary.get_option_summary, [acct])
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/closed-positions")
+@router.get("/{acct}/closed-positions", response_model=APIResponse[ClosedPositionsResponse], response_model_by_alias=True)
 async def get_closed_positions(
     acct: str,
     start_date: str = Query(..., description="ISO start date, e.g. 2026-01-01"),
@@ -74,14 +82,14 @@ async def get_closed_positions(
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/loaned-securities")
+@router.get("/{acct}/loaned-securities", response_model=APIResponse[LoanedSecuritiesResponse], response_model_by_alias=True)
 async def get_loaned_securities(acct: str, client: FidelityClient = Depends(get_client)):
     """Fetch loaned securities data for a single account."""
     result = await asyncio.to_thread(client.loaned_securities.get_loaned_securities, [acct])
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/{acct}/tax-lots/{symbol}")
+@router.get("/{acct}/tax-lots/{symbol}", response_model=APIResponse[TaxLotResponse], response_model_by_alias=True)
 async def get_tax_lots(
     acct: str,
     symbol: str,

@@ -8,13 +8,14 @@ from typing import Optional
 from fastapi import APIRouter, Body, Depends, Query
 
 from fidelity_trader import FidelityClient
+from fidelity_trader.models.preferences import PreferencesResponse
 from service.dependencies import get_client
-from service.models.responses import success
+from service.models.responses import APIResponse, success
 
 router = APIRouter(prefix="/api/v1/preferences", tags=["Preferences"])
 
 
-@router.get("")
+@router.get("", response_model=APIResponse[PreferencesResponse], response_model_by_alias=True)
 async def get_preferences(
     preference_path: str = Query("user/", description="Preference path to query"),
     pref_keys: Optional[list[str]] = Query(None, description="Specific keys to retrieve"),
@@ -29,7 +30,7 @@ async def get_preferences(
     return success(result.model_dump(by_alias=True))
 
 
-@router.put("")
+@router.put("", response_model=APIResponse[PreferencesResponse], response_model_by_alias=True)
 async def save_preferences(
     preference_path: str = Body(...),
     values: dict[str, str] = Body(...),
@@ -44,7 +45,7 @@ async def save_preferences(
     return success(result.model_dump(by_alias=True))
 
 
-@router.delete("")
+@router.delete("", response_model=APIResponse[PreferencesResponse], response_model_by_alias=True)
 async def delete_preferences(
     preference_path: str = Body(...),
     pref_keys: Optional[list[str]] = Body(None),

@@ -207,6 +207,7 @@ class TestWatchlistsEndpoint:
                 {
                     "watchListName": "Buys",
                     "watchListId": "uuid-123",
+                    "watchListTypeCode": "WL",
                     "securityDetails": [],
                 }
             ]
@@ -256,8 +257,8 @@ class TestPreferencesEndpoint:
     async def test_get_preferences(self, http, mock_client):
         mock_response = MagicMock()
         mock_response.model_dump.return_value = {
-            "preferences": [
-                {"preferencePath": "user/", "prefValues": {"theme": "dark"}}
+            "preferenceData": [
+                {"preferencePath": "user/", "data": [{"theme": "dark"}]}
             ]
         }
         mock_client.preferences.get_preferences.return_value = mock_response
@@ -266,7 +267,7 @@ class TestPreferencesEndpoint:
         assert resp.status_code == 200
         body = resp.json()
         assert body["ok"] is True
-        assert body["data"]["preferences"][0]["prefValues"]["theme"] == "dark"
+        assert body["data"]["preferenceData"][0]["data"][0]["theme"] == "dark"
         mock_client.preferences.get_preferences.assert_called_once_with("user/", None)
 
 

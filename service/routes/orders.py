@@ -7,21 +7,36 @@ import asyncio
 from fastapi import APIRouter, Depends, Query
 
 from fidelity_trader import FidelityClient
-from fidelity_trader.models.equity_order import EquityOrderRequest
-from fidelity_trader.models.single_option_order import SingleOptionOrderRequest
-from fidelity_trader.models.option_order import MultiLegOptionOrderRequest
-from fidelity_trader.models.cancel_replace import CancelReplaceRequest
-from fidelity_trader.models.conditional_order import ConditionalOrderRequest
+from fidelity_trader.models.cancel_order import CancelResponse
+from fidelity_trader.models.cancel_replace import CancelReplaceRequest, CancelReplacePreviewResponse, CancelReplacePlaceResponse
+from fidelity_trader.models.conditional_order import (
+    ConditionalOrderRequest,
+    ConditionalPreviewResponse,
+    ConditionalPlaceResponse,
+)
+from fidelity_trader.models.equity_order import EquityOrderRequest, EquityPreviewResponse, EquityPlaceResponse
+from fidelity_trader.models.option_order import (
+    MultiLegOptionOrderRequest,
+    MultiLegOptionPreviewResponse,
+    MultiLegOptionPlaceResponse,
+)
+from fidelity_trader.models.order import OrderStatusResponse
+from fidelity_trader.models.single_option_order import (
+    SingleOptionOrderRequest,
+    SingleOptionPreviewResponse,
+    SingleOptionPlaceResponse,
+)
+from fidelity_trader.models.staged_order import StagedOrdersResponse
 from service.dependencies import get_client
 from service.models.requests import CancelOrderRequest, OrderPlaceRequest, ConditionalPlaceRequest
-from service.models.responses import success
+from service.models.responses import APIResponse, success
 
 router = APIRouter(prefix="/api/v1/orders", tags=["Orders"])
 
 
 # ── Status ───────────────────────────────────────────────────────────
 
-@router.get("/status")
+@router.get("/status", response_model=APIResponse[OrderStatusResponse], response_model_by_alias=True)
 async def get_order_status(
     acct_ids: str = Query(..., description="Comma-separated account numbers"),
     client: FidelityClient = Depends(get_client),
@@ -32,7 +47,7 @@ async def get_order_status(
     return success(result.model_dump(by_alias=True))
 
 
-@router.get("/staged")
+@router.get("/staged", response_model=APIResponse[StagedOrdersResponse], response_model_by_alias=True)
 async def get_staged_orders(
     stage_type: str = Query("saveD_ORDER", description="Stage type"),
     client: FidelityClient = Depends(get_client),
@@ -46,7 +61,7 @@ async def get_staged_orders(
 
 # ── Equity Orders ────────────────────────────────────────────────────
 
-@router.post("/equity/preview")
+@router.post("/equity/preview", response_model=APIResponse[EquityPreviewResponse], response_model_by_alias=True)
 async def preview_equity_order(
     order: EquityOrderRequest,
     client: FidelityClient = Depends(get_client),
@@ -56,7 +71,7 @@ async def preview_equity_order(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/equity/place")
+@router.post("/equity/place", response_model=APIResponse[EquityPlaceResponse], response_model_by_alias=True)
 async def place_equity_order(
     body: OrderPlaceRequest,
     client: FidelityClient = Depends(get_client),
@@ -71,7 +86,7 @@ async def place_equity_order(
 
 # ── Single-Leg Option Orders ────────────────────────────────────────
 
-@router.post("/option/preview")
+@router.post("/option/preview", response_model=APIResponse[SingleOptionPreviewResponse], response_model_by_alias=True)
 async def preview_single_option_order(
     order: SingleOptionOrderRequest,
     client: FidelityClient = Depends(get_client),
@@ -81,7 +96,7 @@ async def preview_single_option_order(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/option/place")
+@router.post("/option/place", response_model=APIResponse[SingleOptionPlaceResponse], response_model_by_alias=True)
 async def place_single_option_order(
     body: OrderPlaceRequest,
     client: FidelityClient = Depends(get_client),
@@ -96,7 +111,7 @@ async def place_single_option_order(
 
 # ── Multi-Leg Option Orders ─────────────────────────────────────────
 
-@router.post("/options/preview")
+@router.post("/options/preview", response_model=APIResponse[MultiLegOptionPreviewResponse], response_model_by_alias=True)
 async def preview_multi_leg_option_order(
     order: MultiLegOptionOrderRequest,
     client: FidelityClient = Depends(get_client),
@@ -106,7 +121,7 @@ async def preview_multi_leg_option_order(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/options/place")
+@router.post("/options/place", response_model=APIResponse[MultiLegOptionPlaceResponse], response_model_by_alias=True)
 async def place_multi_leg_option_order(
     body: OrderPlaceRequest,
     client: FidelityClient = Depends(get_client),
@@ -121,7 +136,7 @@ async def place_multi_leg_option_order(
 
 # ── Cancel ───────────────────────────────────────────────────────────
 
-@router.post("/{conf_num}/cancel")
+@router.post("/{conf_num}/cancel", response_model=APIResponse[CancelResponse], response_model_by_alias=True)
 async def cancel_order(
     conf_num: str,
     body: CancelOrderRequest,
@@ -139,7 +154,7 @@ async def cancel_order(
 
 # ── Cancel-and-Replace ──────────────────────────────────────────────
 
-@router.post("/replace/preview")
+@router.post("/replace/preview", response_model=APIResponse[CancelReplacePreviewResponse], response_model_by_alias=True)
 async def preview_cancel_replace_order(
     order: CancelReplaceRequest,
     client: FidelityClient = Depends(get_client),
@@ -149,7 +164,7 @@ async def preview_cancel_replace_order(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/replace/place")
+@router.post("/replace/place", response_model=APIResponse[CancelReplacePlaceResponse], response_model_by_alias=True)
 async def place_cancel_replace_order(
     body: OrderPlaceRequest,
     client: FidelityClient = Depends(get_client),
@@ -164,7 +179,7 @@ async def place_cancel_replace_order(
 
 # ── Conditional Orders ──────────────────────────────────────────────
 
-@router.post("/conditional/preview")
+@router.post("/conditional/preview", response_model=APIResponse[ConditionalPreviewResponse], response_model_by_alias=True)
 async def preview_conditional_order(
     order: ConditionalOrderRequest,
     client: FidelityClient = Depends(get_client),
@@ -174,7 +189,7 @@ async def preview_conditional_order(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/conditional/place")
+@router.post("/conditional/place", response_model=APIResponse[ConditionalPlaceResponse], response_model_by_alias=True)
 async def place_conditional_order(
     body: ConditionalPlaceRequest,
     client: FidelityClient = Depends(get_client),

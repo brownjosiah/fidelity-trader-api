@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Generic, Optional, TypeVar
 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+T = TypeVar("T")
 
 
 class ErrorDetail(BaseModel):
@@ -14,9 +16,9 @@ class ErrorDetail(BaseModel):
     details: dict | None = None
 
 
-class APIResponse(BaseModel):
+class APIResponse(BaseModel, Generic[T]):
     ok: bool = True
-    data: Any = None
+    data: Optional[T] = None
     error: ErrorDetail | None = None
 
 

@@ -6,13 +6,14 @@ from fastapi import APIRouter, Depends, Request
 
 from service.dependencies import get_session_manager
 from service.models.requests import LoginRequest, CredentialStoreRequest
-from service.models.responses import success
+from service.models.responses import APIResponse, success
+from service.models.schemas import AuthStatusData, CredentialDeletedData, CredentialStoredData
 from service.session.manager import SessionManager
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
-@router.post("/login")
+@router.post("/login", response_model=APIResponse[dict], response_model_by_alias=True)
 async def login(
     body: LoginRequest,
     manager: SessionManager = Depends(get_session_manager),
@@ -26,14 +27,14 @@ async def login(
     return success(result)
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=APIResponse[None], response_model_by_alias=True)
 async def logout(manager: SessionManager = Depends(get_session_manager)):
     """Logout and tear down the Fidelity session."""
     await manager.logout()
     return success()
 
 
-@router.get("/status")
+@router.get("/status", response_model=APIResponse[AuthStatusData], response_model_by_alias=True)
 async def status(manager: SessionManager = Depends(get_session_manager)):
     """Return current session state and authentication flag."""
     return success({
@@ -42,7 +43,7 @@ async def status(manager: SessionManager = Depends(get_session_manager)):
     })
 
 
-@router.post("/credentials")
+@router.post("/credentials", response_model=APIResponse[CredentialStoredData], response_model_by_alias=True)
 async def store_credentials(body: CredentialStoreRequest, request: Request):
     """Store encrypted credentials for later use."""
     store = request.app.state.store
@@ -54,7 +55,7 @@ async def store_credentials(body: CredentialStoreRequest, request: Request):
     return success({"stored": True})
 
 
-@router.delete("/credentials")
+@router.delete("/credentials", response_model=APIResponse[CredentialDeletedData], response_model_by_alias=True)
 async def delete_credentials(request: Request):
     """Delete stored credentials."""
     store = request.app.state.store

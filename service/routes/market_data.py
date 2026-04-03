@@ -9,13 +9,15 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 
 from fidelity_trader import FidelityClient
+from fidelity_trader.models.available_market import AvailableMarketsResponse
 from service.dependencies import get_client
-from service.models.responses import success
+from service.models.responses import APIResponse, success
+from service.models.schemas import ChartSchema, MontageSchema, OptionChainSchema
 
 router = APIRouter(prefix="/api/v1/market-data", tags=["Market Data"])
 
 
-@router.get("/chain/{symbol}")
+@router.get("/chain/{symbol}", response_model=APIResponse[OptionChainSchema], response_model_by_alias=True)
 async def get_option_chain(
     symbol: str,
     client: FidelityClient = Depends(get_client),
@@ -25,7 +27,7 @@ async def get_option_chain(
     return success(asdict(result))
 
 
-@router.get("/montage/{symbol}")
+@router.get("/montage/{symbol}", response_model=APIResponse[MontageSchema], response_model_by_alias=True)
 async def get_montage(
     symbol: str,
     client: FidelityClient = Depends(get_client),
@@ -35,7 +37,7 @@ async def get_montage(
     return success(asdict(result))
 
 
-@router.get("/chart/{symbol}")
+@router.get("/chart/{symbol}", response_model=APIResponse[ChartSchema], response_model_by_alias=True)
 async def get_chart(
     symbol: str,
     start_date: str = Query(..., description="Start date as YYYY/MM/DD-HH:MM:SS"),
@@ -56,7 +58,7 @@ async def get_chart(
     return success(asdict(result))
 
 
-@router.get("/markets/{symbol}")
+@router.get("/markets/{symbol}", response_model=APIResponse[AvailableMarketsResponse], response_model_by_alias=True)
 async def get_available_markets(
     symbol: str,
     account_numbers: List[str] = Query(..., description="Account numbers to check"),

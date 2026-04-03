@@ -5,7 +5,13 @@ from __future__ import annotations
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from service.models.responses import success
+from service.models.responses import APIResponse, success
+from service.models.schemas import (
+    StreamingStatusData,
+    StreamingSubscribedData,
+    StreamingSubscriptionsData,
+    StreamingUnsubscribedData,
+)
 
 router = APIRouter(prefix="/api/v1/streaming", tags=["streaming"])
 
@@ -14,7 +20,7 @@ class SymbolsRequest(BaseModel):
     symbols: list[str]
 
 
-@router.post("/subscribe")
+@router.post("/subscribe", response_model=APIResponse[StreamingSubscribedData], response_model_by_alias=True)
 async def subscribe(request: Request, body: SymbolsRequest):
     """Subscribe to symbols on the MDDS stream.
 
@@ -36,7 +42,7 @@ async def subscribe(request: Request, body: SymbolsRequest):
     return success(data={"subscribed": symbols})
 
 
-@router.post("/unsubscribe")
+@router.post("/unsubscribe", response_model=APIResponse[StreamingUnsubscribedData], response_model_by_alias=True)
 async def unsubscribe(request: Request, body: SymbolsRequest):
     """Unsubscribe symbols from the MDDS stream."""
     manager = request.app.state.mdds_manager
@@ -46,14 +52,14 @@ async def unsubscribe(request: Request, body: SymbolsRequest):
     return success(data={"unsubscribed": symbols})
 
 
-@router.get("/subscriptions")
+@router.get("/subscriptions", response_model=APIResponse[StreamingSubscriptionsData], response_model_by_alias=True)
 async def subscriptions(request: Request):
     """Return current symbol subscriptions with refcounts."""
     manager = request.app.state.mdds_manager
     return success(data={"subscriptions": manager.get_subscriptions()})
 
 
-@router.get("/status")
+@router.get("/status", response_model=APIResponse[StreamingStatusData], response_model_by_alias=True)
 async def status(request: Request):
     """MDDS connection status."""
     manager = request.app.state.mdds_manager

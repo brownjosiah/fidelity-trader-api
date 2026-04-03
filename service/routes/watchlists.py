@@ -9,15 +9,22 @@ from typing import List, Optional, Union
 from fastapi import APIRouter, Body, Depends, Query
 
 from fidelity_trader import FidelityClient
+from fidelity_trader.models.price_trigger import (
+    PriceTriggerCreateResponse,
+    PriceTriggerDeleteResponse,
+    PriceTriggersResponse,
+)
+from fidelity_trader.models.watchlist import WatchlistResponse, WatchlistSaveResponse
 from service.dependencies import get_client
-from service.models.responses import success
+from service.models.responses import APIResponse, success
+from service.models.schemas import AlertActivationSchema
 
 router = APIRouter(prefix="/api/v1", tags=["Watchlists & Alerts"])
 
 
 # ── Watchlists ───────────────────────────────────────────────────────
 
-@router.get("/watchlists")
+@router.get("/watchlists", response_model=APIResponse[WatchlistResponse], response_model_by_alias=True)
 async def get_watchlists(
     watchlist_ids: Optional[List[str]] = Query(None, description="Specific watchlist UUIDs to retrieve"),
     watchlist_type_code: str = Query("WL", description="Watchlist type code"),
@@ -34,7 +41,7 @@ async def get_watchlists(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/watchlists/save")
+@router.post("/watchlists/save", response_model=APIResponse[WatchlistSaveResponse], response_model_by_alias=True)
 async def save_watchlist(
     watchlist_details: Union[dict, list[dict]] = Body(...),
     client: FidelityClient = Depends(get_client),
@@ -49,7 +56,7 @@ async def save_watchlist(
 
 # ── Alerts ───────────────────────────────────────────────────────────
 
-@router.get("/alerts/subscribe")
+@router.get("/alerts/subscribe", response_model=APIResponse[AlertActivationSchema], response_model_by_alias=True)
 async def subscribe_alerts(
     client: FidelityClient = Depends(get_client),
 ):
@@ -58,7 +65,7 @@ async def subscribe_alerts(
     return success(asdict(result))
 
 
-@router.get("/alerts/price-triggers")
+@router.get("/alerts/price-triggers", response_model=APIResponse[PriceTriggersResponse], response_model_by_alias=True)
 async def get_price_triggers(
     symbol: str = Query(..., description="Ticker symbol to query"),
     status: str = Query("active", description="Filter by trigger status"),
@@ -75,7 +82,7 @@ async def get_price_triggers(
     return success(result.model_dump(by_alias=True))
 
 
-@router.post("/alerts/price-triggers")
+@router.post("/alerts/price-triggers", response_model=APIResponse[PriceTriggerCreateResponse], response_model_by_alias=True)
 async def create_price_trigger(
     symbol: str = Body(...),
     operator: str = Body(...),
@@ -96,7 +103,7 @@ async def create_price_trigger(
     return success(result.model_dump(by_alias=True))
 
 
-@router.delete("/alerts/price-triggers/{trigger_id}")
+@router.delete("/alerts/price-triggers/{trigger_id}", response_model=APIResponse[PriceTriggerDeleteResponse], response_model_by_alias=True)
 async def delete_price_trigger(
     trigger_id: str,
     client: FidelityClient = Depends(get_client),
