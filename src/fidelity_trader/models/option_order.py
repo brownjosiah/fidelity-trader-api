@@ -1,7 +1,7 @@
 """Pydantic models for multi-leg option order preview/place request and response."""
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 

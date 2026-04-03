@@ -14,14 +14,6 @@ from fidelity_trader.models.conditional_order import (
     ConditionalPlaceResponse,
     CondOrderSysMsg,
     CondOrderConfirmDetail,
-    CondOrderLegResponse,
-    CondOrderEstCommDetail,
-    CondOrderPriceDetail,
-    CondOrderSecDetail,
-    CondOrderBaseDetail,
-    CondOrderPriceTypeDetail,
-    CondOrderTradableSecDetail,
-    CondOrderDetail,
 )
 from fidelity_trader.orders.conditional import ConditionalOrderAPI
 
@@ -803,7 +795,7 @@ class TestConditionalOrderAPIEndToEnd:
     @respx.mock
     def test_full_preview_then_place_workflow(self):
         """Verify conf_nums flow from preview into the place request body."""
-        preview_route = respx.post(_PREVIEW_URL).mock(
+        respx.post(_PREVIEW_URL).mock(
             return_value=httpx.Response(200, json=_make_otoco_preview_response())
         )
         place_route = respx.post(_PLACE_URL).mock(

@@ -6,13 +6,13 @@ from typing import Optional
 
 import typer
 
-from fidelity_trader.cli._auth import auth_app, login, logout, status
-from fidelity_trader.cli._market_data import market_data_app, quote, chart, search
+from fidelity_trader.cli._auth import login, logout, status
+from fidelity_trader.cli._market_data import quote, chart, search
 from fidelity_trader.cli._options import options_app
-from fidelity_trader.cli._orders import orders_app, orders, buy, sell, cancel
-from fidelity_trader.cli._portfolio import portfolio_app, accounts, positions, balances
-from fidelity_trader.cli._research import research_app, earnings, dividends
-from fidelity_trader.cli._stream import stream_app, stream
+from fidelity_trader.cli._orders import orders, buy, sell, cancel
+from fidelity_trader.cli._portfolio import accounts, positions, balances
+from fidelity_trader.cli._research import earnings, dividends
+from fidelity_trader.cli._stream import stream
 
 app = typer.Typer(
     name="ft",

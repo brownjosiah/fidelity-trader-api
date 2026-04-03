@@ -43,14 +43,12 @@ class RetryTransport(httpx.BaseTransport):
         self._retry_status_codes = retry_status_codes
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
-        last_exc: Exception | None = None
         last_response: httpx.Response | None = None
 
         for attempt in range(self._max_retries + 1):
             try:
                 response = self._transport.handle_request(request)
             except _RETRYABLE_EXCEPTIONS as exc:
-                last_exc = exc
                 if attempt < self._max_retries:
                     delay = self._retry_delay * (self._backoff_factor ** attempt)
                     logger.warning(

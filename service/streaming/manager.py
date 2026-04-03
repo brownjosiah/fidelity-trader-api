@@ -19,12 +19,10 @@ Integration with app.py lifespan (not wired yet):
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import uuid
-from dataclasses import dataclass, field
 
-from fidelity_trader.streaming.mdds import MDDSClient, MDDSQuote, VirtualBook
+from fidelity_trader.streaming.mdds import MDDSClient
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +131,7 @@ class MDDSManager:
                 new_symbols.append(sym)
 
         if new_symbols and self._mdds is not None and self._ws is not None:
-            msg = self._mdds.build_subscribe_message(new_symbols)
+            self._mdds.build_subscribe_message(new_symbols)
             logger.info("MDDS subscribe: %s", new_symbols)
             # In production this would send via the websocket:
             # await self._ws.send(msg)
@@ -156,7 +154,7 @@ class MDDSManager:
                 self._consumer_symbols[consumer_id].discard(sym)
 
         if dead_symbols and self._mdds is not None and self._ws is not None:
-            msg = self._mdds.build_unsubscribe_message(dead_symbols)
+            self._mdds.build_unsubscribe_message(dead_symbols)
             logger.info("MDDS unsubscribe: %s", dead_symbols)
             # await self._ws.send(msg)
 

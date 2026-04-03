@@ -1,13 +1,11 @@
 """Tests for the composed FidelityClient."""
 
 import httpx
-import pytest
 import respx
 from unittest.mock import patch
 
 import fidelity_trader
 from fidelity_trader import FidelityClient
-from fidelity_trader.auth.session import AuthSession
 from fidelity_trader.portfolio.positions import PositionsAPI
 from fidelity_trader.portfolio.balances import BalancesAPI
 from fidelity_trader.portfolio.option_summary import OptionSummaryAPI

@@ -1,7 +1,6 @@
 """Tests for the security context / entitlements API."""
 
 import httpx
-import pytest
 import respx
 
 from fidelity_trader.auth.security_context import SecurityContextAPI

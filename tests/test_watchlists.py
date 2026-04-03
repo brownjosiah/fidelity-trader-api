@@ -7,9 +7,6 @@ import respx
 
 from fidelity_trader._http import DPSERVICE_URL
 from fidelity_trader.models.watchlist import (
-    SavedSecurity,
-    SavedWatchlist,
-    SysMsg,
     Watchlist,
     WatchlistResponse,
     WatchlistSaveResponse,

@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 
 from fidelity_trader.exceptions import (
     AuthenticationError,

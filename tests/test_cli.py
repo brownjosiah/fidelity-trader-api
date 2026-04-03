@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 from unittest.mock import MagicMock, patch
 
@@ -18,7 +17,6 @@ from fidelity_trader.cli._session import (
     delete_session,
     load_session_data,
     save_session,
-    _session_path,
 )
 from fidelity_trader.exceptions import (
     APIError,

@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import signal
-import sys
-from typing import List, Optional
+from typing import List
 
 import typer
 
 from fidelity_trader.cli._errors import handle_errors
-from fidelity_trader.cli._output import print_error, print_success
+from fidelity_trader.cli._output import print_error
 
 stream_app = typer.Typer(help="Streaming commands")
 

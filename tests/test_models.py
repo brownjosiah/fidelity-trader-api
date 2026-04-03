@@ -1,7 +1,7 @@
 """Tests for pydantic models: FidelityStatus, LoginResponse, and shared parse helpers."""
 import pytest
 
-from fidelity_trader.models.auth import FidelityStatus, LoginResponse, ResponseBaseInfo
+from fidelity_trader.models.auth import FidelityStatus, LoginResponse
 from fidelity_trader.models._parsers import _parse_float, _parse_int
 
 

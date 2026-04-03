@@ -12,15 +12,6 @@ from fidelity_trader.models.single_option_order import (
     SingleOptionPreviewResponse,
     SingleOptionPlaceResponse,
     SingleOptionOrderConfirmDetail,
-    SingleOptionRespPriceDetail,
-    SingleOptionEstCommissionDetail,
-    SingleOptionRespOrderDetail,
-    SingleOptionRespBaseOrderDetail,
-    SingleOptionRespSecurityDetail,
-    SingleOptionRespTradableSecOrderDetail,
-    SingleOptionRespPriceTypeDetail,
-    SingleOptionRespOptionDetail,
-    SingleOptionRespSpecificShrDetail,
 )
 from fidelity_trader.orders.single_option import SingleOptionOrderAPI
 
@@ -621,7 +612,7 @@ class TestSingleOptionOrderAPIEndToEnd:
     @respx.mock
     def test_full_preview_then_place_workflow(self):
         """Verify the conf_num flows from preview into the place request body."""
-        preview_route = respx.post(_PREVIEW_URL).mock(
+        respx.post(_PREVIEW_URL).mock(
             return_value=httpx.Response(
                 200, json=_make_preview_response("D02PXWRR")
             )

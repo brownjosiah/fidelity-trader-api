@@ -40,7 +40,6 @@ def _derive_action_code(action: str, option_symbol: str) -> str:
     while i < len(option_symbol) and option_symbol[i].isalpha():
         i += 1
     # Skip 6-digit date (YYMMDD)
-    date_start = i
     while i < len(option_symbol) and option_symbol[i].isdigit():
         i += 1
     # The next character should be C or P

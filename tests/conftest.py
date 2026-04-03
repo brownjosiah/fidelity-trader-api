@@ -3,7 +3,6 @@ import re
 import httpx
 import pytest
 
-from fidelity_trader._http import BASE_URL, AUTH_URL
 
 
 def strip_ansi(text: str) -> str:

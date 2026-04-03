@@ -3,7 +3,6 @@
 import json
 
 import httpx
-import pytest
 import respx
 
 from fidelity_trader.settings.preferences import PreferencesAPI

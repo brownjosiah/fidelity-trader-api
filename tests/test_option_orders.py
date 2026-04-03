@@ -15,9 +15,6 @@ from fidelity_trader.models.option_order import (
     OptionLeg,
     OptionLegSecurityDetail,
     OptionLegPriceDetail,
-    OptionRespLeg,
-    OptionRespComplexDetail,
-    OptionSysMsg,
     OptionSysMsgs,
 )
 from fidelity_trader.orders.options import MultiLegOptionOrderAPI
@@ -561,7 +558,7 @@ class TestMultiLegOptionOrderAPIEndToEnd:
     @respx.mock
     def test_full_preview_then_place_workflow(self):
         """Verify the conf_num flows from preview into the place request body."""
-        preview_route = respx.post(_PREVIEW_URL).mock(
+        respx.post(_PREVIEW_URL).mock(
             return_value=httpx.Response(200, json=_make_preview_response("C31PHDRX"))
         )
         place_route = respx.post(_PLACE_URL).mock(

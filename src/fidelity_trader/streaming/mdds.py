@@ -10,9 +10,6 @@ from typing import Callable, Optional, Union
 
 from fidelity_trader.streaming.mdds_fields import (
     parse_fields,
-    OPTION_FIELDS,
-    EQUITY_FIELDS,
-    VIRTUALBOOK_FIELDS,
 )
 
 

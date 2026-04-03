@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import os
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import AsyncClient, ASGITransport
 
 from service.app import create_app
-from service.config import Settings
 from service.dependencies import get_client, get_session_manager
 from service.session.manager import SessionManager, SessionState
 from service.session.store import SessionStore

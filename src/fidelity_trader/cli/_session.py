@@ -14,7 +14,6 @@ from typing import Generator
 import httpx
 
 from fidelity_trader import FidelityClient
-from fidelity_trader._http import create_atp_session
 from fidelity_trader.cli._config import get_config_dir, SESSION_FILE_NAME, ENV_ACCOUNT
 from fidelity_trader.cli._output import print_error
 

@@ -1,5 +1,5 @@
 import httpx
-from fidelity_trader._http import create_session, REQUEST_HEADERS
+from fidelity_trader._http import create_session
 from fidelity_trader._http import create_atp_session, ATP_HEADERS, DPSERVICE_URL, STREAMING_NEWS_URL
 
 def test_create_session_returns_httpx_client():

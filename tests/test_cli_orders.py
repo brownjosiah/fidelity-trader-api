@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import pytest
 from typer.testing import CliRunner
 
 from fidelity_trader.cli import app
@@ -19,7 +18,6 @@ from fidelity_trader.models.single_option_order import (
     SingleOptionOrderConfirmDetail,
     SingleOptionEstCommissionDetail,
     SingleOptionPreviewResponse,
-    SingleOptionPlaceResponse,
 )
 from fidelity_trader.models.cancel_order import CancelConfirmDetail, CancelResponse
 from fidelity_trader.models.order import OrderStatusResponse

@@ -243,7 +243,7 @@ class TestCancelReplaceRequest:
         assert sec["cusip"] == "74767V109"
 
     def test_cusip_omitted_when_none(self):
-        order = _make_cr_request(cusip=None)
+        _make_cr_request(cusip=None)
         # Workaround: cusip is provided as a kwarg, need to construct without it
         order_no_cusip = CancelReplaceRequest(
             acctNum="Z21772945",
@@ -716,7 +716,7 @@ class TestCancelReplaceAPIEndToEnd:
     @respx.mock
     def test_full_preview_then_place_workflow(self):
         """Verify the conf_num flows from preview into the place request body."""
-        preview_route = respx.post(_PREVIEW_URL).mock(
+        respx.post(_PREVIEW_URL).mock(
             return_value=httpx.Response(
                 200, json=_make_preview_response("24C0SZD3")
             )

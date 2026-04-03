@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from fidelity_trader.models._parsers import _parse_float, _parse_int
+from fidelity_trader.models._parsers import _parse_float
 
 
 # ---------------------------------------------------------------------------

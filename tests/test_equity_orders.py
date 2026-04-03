@@ -12,13 +12,6 @@ from fidelity_trader.models.equity_order import (
     EquityPreviewResponse,
     EquityPlaceResponse,
     EquityOrderConfirmDetail,
-    EquityRespPriceDetail,
-    EquityEstCommissionDetail,
-    EquityRespOrderDetail,
-    EquityRespBaseOrderDetail,
-    EquityRespSecurityDetail,
-    EquityRespTradableSecOrderDetail,
-    EquityRespPriceTypeDetail,
 )
 from fidelity_trader.orders.equity import EquityOrderAPI
 
@@ -469,7 +462,7 @@ class TestEquityOrderAPIEndToEnd:
     @respx.mock
     def test_full_preview_then_place_workflow(self):
         """Verify the conf_num flows from preview into the place request body."""
-        preview_route = respx.post(_PREVIEW_URL).mock(
+        respx.post(_PREVIEW_URL).mock(
             return_value=httpx.Response(200, json=_make_preview_response("24A0L75J"))
         )
         place_route = respx.post(_PLACE_URL).mock(

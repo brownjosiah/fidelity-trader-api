@@ -1,9 +1,8 @@
 """Tests for the AsyncFidelityClient wrapper."""
 
-import asyncio
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from fidelity_trader import AsyncFidelityClient
 from fidelity_trader.client import FidelityClient
@@ -314,7 +313,7 @@ async def test_kwargs_pass_through_to_sync_client():
     with patch.object(
         FidelityClient, "__init__", return_value=None
     ) as mock_init:
-        client = AsyncFidelityClient(foo="bar", baz=42)
+        AsyncFidelityClient(foo="bar", baz=42)
         mock_init.assert_called_once_with(foo="bar", baz=42)
 
 

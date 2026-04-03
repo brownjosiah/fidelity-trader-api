@@ -16,7 +16,6 @@ from fidelity_trader.models.order import (
     OptionDetail,
     TradableSecOrderDetail,
     OrderDetail,
-    OrderSummary,
     AccountOrderSummary,
     OrderStatusResponse,
 )

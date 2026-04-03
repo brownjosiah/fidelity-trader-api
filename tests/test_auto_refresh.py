@@ -1,10 +1,8 @@
 """Tests for the SessionAutoRefresh background thread."""
 
-import threading
 import time
 from unittest.mock import MagicMock, patch
 
-import pytest
 
 from fidelity_trader.auth.auto_refresh import SessionAutoRefresh
 from fidelity_trader.auth.session_keepalive import SessionKeepAliveAPI

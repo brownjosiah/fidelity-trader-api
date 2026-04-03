@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import asdict
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, Query
 

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from httpx import AsyncClient, ASGITransport
@@ -49,7 +48,6 @@ def _make_app_with_mock_client(mock_client):
 async def _init_app_state(app):
     """Manually initialize app.state for testing (lifespan doesn't run)."""
     import tempfile
-    from service.config import Settings
     from service.session.manager import SessionManager
     from service.session.store import SessionStore
 
