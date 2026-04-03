@@ -5,6 +5,22 @@ on:
     types: [published]
 
 jobs:
+  openapi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[service]"
+      - run: python scripts/export_openapi.py openapi.json
+      - name: Attach openapi.json to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${GITHUB_REF#refs/tags/}" openapi.json --clobber
+
   pypi:
     runs-on: ubuntu-latest
     permissions:

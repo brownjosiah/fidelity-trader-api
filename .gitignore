@@ -13,3 +13,4 @@ build/
 data/
 *.db
 /site/
+openapi.json
