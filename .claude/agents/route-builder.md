@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
 
-You create FastAPI route files that wrap `fidelity-trader-sdk` modules as REST endpoints.
+You create FastAPI route files that wrap `fidelity-trader-api` SDK modules as REST endpoints.
 
 ## Context
 

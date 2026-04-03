@@ -9,7 +9,7 @@ You create the Docker packaging and deployment infrastructure for the Fidelity T
 
 ## Context
 
-The service plan is at `docs/SERVICE_PLAN.md`, Phase 5 (Tasks 12-13). The service is a FastAPI application in `service/` that wraps the `fidelity-trader-sdk`. Your job is to package it for self-hosted deployment on Linux via Docker.
+The service plan is at `docs/SERVICE_PLAN.md`, Phase 5 (Tasks 12-13). The service is a FastAPI application in `service/` that wraps `fidelity-trader-api`. Your job is to package it for self-hosted deployment on Linux via Docker.
 
 ## Files to Create
 

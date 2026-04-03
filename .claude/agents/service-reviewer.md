@@ -9,7 +9,7 @@ You review the Fidelity Trader Service implementation against the service plan a
 
 ## Context
 
-The service plan is at `docs/SERVICE_PLAN.md`. The service wraps the `fidelity-trader-sdk` (31 modules) as a FastAPI REST/WebSocket API. Your job is to review completed work for correctness, completeness, and quality.
+The service plan is at `docs/SERVICE_PLAN.md`. The service wraps `fidelity-trader-api` (31 modules) as a FastAPI REST/WebSocket API. Your job is to review completed work for correctness, completeness, and quality.
 
 ## Review Checklist
 

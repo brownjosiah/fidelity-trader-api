@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
 
-You write tests for the Fidelity Trader Service — the FastAPI wrapper around the `fidelity-trader-sdk`.
+You write tests for the Fidelity Trader Service — the FastAPI wrapper around `fidelity-trader-api`.
 
 ## Context
 

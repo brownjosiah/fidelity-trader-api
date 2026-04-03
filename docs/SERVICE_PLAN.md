@@ -2,11 +2,11 @@
 
 > **Prerequisite:** This plan is Phase 2 of the project roadmap. Phase 1 (completing Trader+ API coverage in the SDK) takes priority. The service layer is only as useful as the SDK it wraps — see [`BACKLOG.md`](BACKLOG.md) for remaining SDK work. Service implementation should begin once the core trading workflow is complete (single-leg options, order modification, conditional orders, L2 streaming).
 
-> **Goal:** Wrap the fidelity-trader-sdk Python library in a self-hosted REST/WebSocket service that any language or tool can consume, with centralized session management, streaming fan-out, and Docker deployment.
+> **Goal:** Wrap the fidelity-trader-api Python library in a self-hosted REST/WebSocket service that any language or tool can consume, with centralized session management, streaming fan-out, and Docker deployment.
 
 **Architecture:** FastAPI service that imports the SDK as a dependency, manages Fidelity sessions in a background process, exposes all 23+ API modules as REST endpoints, and fans out MDDS WebSocket quotes via Server-Sent Events or WebSocket. Deployed as a Docker container targeting Linux.
 
-**Tech Stack:** FastAPI, Uvicorn, SQLite (session/credential storage), Redis (optional — streaming pub/sub), Docker, fidelity-trader-sdk (this library)
+**Tech Stack:** FastAPI, Uvicorn, SQLite (session/credential storage), Redis (optional — streaming pub/sub), Docker, fidelity-trader-api (this library)
 
 ---
 
@@ -27,7 +27,7 @@ The service is a **thin wrapper** around the SDK. It does not reimplement any Fi
 
 The SDK remains the sole implementation of Fidelity protocol logic. The service never bypasses the SDK to call Fidelity directly. This means:
 
-- All 23 API modules remain in `fidelity-trader-sdk`
+- All 23 API modules remain in `fidelity-trader-api`
 - MDDS WebSocket parsing stays in the SDK
 - Pydantic models stay in the SDK
 - Auth handshake logic stays in the SDK
@@ -228,7 +228,7 @@ Error responses:
 ## File Structure
 
 ```
-fidelity-trader-sdk/
+fidelity-trader-api/
 ├── src/fidelity_trader/          # Existing SDK (unchanged)
 │
 ├── service/                      # New: service layer

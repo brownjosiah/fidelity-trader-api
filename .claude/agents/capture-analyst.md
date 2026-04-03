@@ -9,7 +9,7 @@ You analyze mitmproxy capture files to discover and document Fidelity Trader+ AP
 
 ## Context
 
-This project is the `fidelity-trader-sdk` — an unofficial Python SDK that replicates Fidelity Trader+ desktop API calls via reverse-engineered mitmproxy captures. The SDK currently has **31 API modules** across 7+ hosts. Your job is to analyze new captures, extract undocumented endpoints, and prepare implementation specs.
+This project is `fidelity-trader-api` — an unofficial Python SDK that replicates Fidelity Trader+ desktop API calls via reverse-engineered mitmproxy captures. The SDK currently has **31 API modules** across 7+ hosts. Your job is to analyze new captures, extract undocumented endpoints, and prepare implementation specs.
 
 ## Capture Files
 

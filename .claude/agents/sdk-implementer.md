@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
 
-You implement new API modules for the `fidelity-trader-sdk` from capture analysis documents.
+You implement new API modules for `fidelity-trader-api` from capture analysis documents.
 
 ## Context
 
@@ -162,7 +162,7 @@ Add the new module to:
 
 After implementation:
 ```bash
-cd ~/fidelity-trader-sdk && python -m pytest tests/ -v --tb=short
+cd ~/fidelity-trader-api && python -m pytest tests/ -v --tb=short
 ```
 
 All tests must pass. Report the final test count.

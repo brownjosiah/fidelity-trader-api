@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 model: inherit
 ---
 
-You build the core infrastructure for the Fidelity Trader Service — a FastAPI wrapper around the `fidelity-trader-sdk`.
+You build the core infrastructure for the Fidelity Trader Service — a FastAPI wrapper around `fidelity-trader-api`.
 
 ## Context
 

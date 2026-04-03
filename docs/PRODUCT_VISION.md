@@ -126,7 +126,7 @@ This is people's actual money. Before open-sourcing something that can place tra
 
 ### Naming & Branding
 
-`fidelity-trader-sdk` is descriptive but long. For a multi-layer project, a shorter umbrella name works better:
+`fidelity-trader-api` is descriptive but long. For a multi-layer project, a shorter umbrella name works better:
 
 | Option | Pros | Cons |
 |--------|------|------|
@@ -135,7 +135,7 @@ This is people's actual money. Before open-sourcing something that can place tra
 | `fidapi` | Short, clear purpose | Sounds like an acronym |
 | `unfidelity` | Memorable, "un-official Fidelity" | Could be seen as negative |
 
-Current recommendation: **`fidelity-trader`** as the PyPI package name. It's what people will search for. The GitHub repo can stay `fidelity-trader-sdk` or simplify to `fidelity-trader`.
+Current recommendation: **`fidelity-trader`** as the PyPI package name. It's what people will search for. The GitHub repo can stay `fidelity-trader-api` or simplify to `fidelity-trader`.
 
 ### Legal
 
@@ -251,7 +251,7 @@ How we'll know the project is succeeding:
 
 ## Open Questions
 
-1. **Naming decision** — Stick with `fidelity-trader-sdk` or simplify to `fidelity-trader`?
+1. **Naming decision** — Stick with `fidelity-trader-api` or simplify to `fidelity-trader`?
 2. **Mono-repo vs multi-repo** — Keep SDK + service + CLI in one repo, or split?
 3. **Fidelity account for CI** — Do we want automated integration tests against a real account?
 4. **Docs hosting** — GitHub Pages (free) or ReadTheDocs or custom?
