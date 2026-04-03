@@ -1,7 +1,7 @@
 # Fidelity Trader SDK — Project Backlog
 
-> Last updated: 2026-04-02
-> Current state: **31 API modules**, **1330 tests**, **8 capture files**
+> Last updated: 2026-04-03
+> Current state: **31 SDK modules**, **17 CLI commands**, **57 service endpoints**, **1587 tests**, **8 capture files**
 
 ---
 
@@ -108,12 +108,12 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 
 | # | Item | Priority | Status | Notes |
 |---|------|----------|--------|-------|
-| 4.1 | **Clean up stale models/account.py** | Medium | DONE | Extracted _parse_float/_parse_int to _parsers.py, removed stale Account/Balance/Position classes |
-| 4.2 | **Update CLAUDE.md** | Medium | DONE | Rewritten to reflect 25-module architecture, all hosts, API quirks, capture workflow |
-| 4.3 | **Update full_walkthrough.py** | Medium | TODO | Example should cover all 23 modules including new ones |
-| 4.4 | **Session keep-alive / auto-refresh** | Medium | TODO | No automatic session extension — long-running apps will timeout |
-| 4.5 | **Async client option** | Low | TODO | All modules are sync httpx; could add async variants |
-| 4.6 | **Rate limiting / retry logic** | Low | TODO | No retry on transient failures |
+| 4.1 | **Clean up stale models/account.py** | Medium | DONE | Extracted _parse_float/_parse_int to _parsers.py, removed stale classes |
+| 4.2 | **Update CLAUDE.md** | Medium | DONE | Rewritten for 31 modules, CLI, service, dry-run, 1587 tests |
+| 4.3 | **Update full_walkthrough.py** | Medium | DONE | Updated to cover all 31 modules |
+| 4.4 | **Session keep-alive / auto-refresh** | Medium | DONE | `SessionAutoRefresh` daemon thread + `SessionKeepAliveAPI.extend_session()` |
+| 4.5 | **Async client option** | Low | DONE | `AsyncFidelityClient` via `asyncio.to_thread`, 17 tests |
+| 4.6 | **Rate limiting / retry logic** | Low | DONE | `RetryTransport` with exponential backoff, 429/5xx retry, 32 tests |
 | 4.7 | **PyPI packaging / CI** | Low | DONE | GitHub Actions for pytest + ruff CI and PyPI trusted publishing |
 
 ### 5. Product & Release (from [DECISIONS.md](DECISIONS.md))
@@ -166,8 +166,8 @@ MVP complete (SDK + CLI + Service). Remaining work is ecosystem, polish, and cap
 | Priority | Done | Remaining | Items |
 |----------|------|-----------|-------|
 | **High** | 9 | 0 | All done: ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~, ~~License (5.3)~~, ~~Package rename (5.4)~~, ~~CLI tool (5.1)~~, ~~Dry-run mode (5.2)~~, ~~Service layer (5.5)~~ |
-| **Medium** | 8 | 11 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Walkthrough (4.3), Session refresh (4.4), Docs site (5.6), CI smoke tests (5.7), Docker Hub (5.8), OpenAPI response typing (5.15) |
-| **Low** | 0 | 21 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), Vault (5.9), Azure KV (5.10), TS client (5.11), Go client (5.12), Contribution guide (5.13), Webhooks (5.14), OpenAPI export (5.16), Spec release artifact (5.17), CI schema check (5.18) |
+| **Medium** | 13 | 8 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~, ~~Walkthrough (4.3)~~, ~~Session refresh (4.4)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Docs site (5.6), CI smoke tests (5.7), Docker Hub (5.8), OpenAPI response typing (5.15) |
+| **Low** | 3 | 18 | Done: ~~Async (4.5)~~, ~~Retry (4.6)~~, ~~PyPI/CI (4.7)~~. Remaining: Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Vault (5.9), Azure KV (5.10), TS client (5.11), Go client (5.12), Contribution guide (5.13), Webhooks (5.14), OpenAPI export (5.16), Spec release artifact (5.17), CI schema check (5.18) |
 | **Skip** | 1 | 0 | Login logging/telemetry (1.8) |
 
 ---
