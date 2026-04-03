@@ -142,6 +142,40 @@ pip install fidelity-trader-api
 
 **Requirements:** Python 3.10+ and a Fidelity brokerage account with Trader+ access.
 
+### Verify CLI Installation
+
+After installing with `[cli]`, verify the `ft` command is available:
+
+```bash
+ft --help
+```
+
+If you get "command not found", the Python Scripts directory isn't in your PATH:
+
+**Windows (PowerShell):**
+```powershell
+# Find where pip installed it
+python -c "import sysconfig; print(sysconfig.get_path('scripts'))"
+
+# Add to PATH permanently (replace path with your output above)
+[Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\Users\YourUser\AppData\Local\Programs\Python\Python312\Scripts", "User")
+
+# Restart your terminal, then verify
+ft --help
+```
+
+**Linux / macOS:**
+```bash
+# Usually ~/.local/bin — add to your shell profile if needed
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Alternative** — invoke without PATH setup:
+```bash
+python -m fidelity_trader.cli --help
+```
+
 ## Safety: Dry-Run Mode
 
 **All order placement is blocked by default.** This prevents accidental trades when developing or testing.
