@@ -8,6 +8,7 @@ from typing import Optional
 import typer
 
 from fidelity_trader import FidelityClient
+from fidelity_trader.exceptions import AuthenticationError
 from fidelity_trader.cli._config import ENV_USERNAME, ENV_PASSWORD, ENV_TOTP_SECRET
 from fidelity_trader.cli._errors import handle_errors
 from fidelity_trader.cli._output import print_error, print_success, print_table
@@ -27,7 +28,10 @@ def login(
     username: Optional[str] = typer.Option(None, "--username", "-u", help="Fidelity username"),
     password: Optional[str] = typer.Option(None, "--password", "-p", help="Fidelity password"),
     totp_secret: Optional[str] = typer.Option(
-        None, "--totp-secret", "-t", help="TOTP secret for 2FA"
+        None, "--totp-secret", help="TOTP base32 secret key (auto-generates codes)"
+    ),
+    totp_token: Optional[str] = typer.Option(
+        None, "--totp-token", "-t", help="6-digit TOTP code from your authenticator app"
     ),
 ) -> None:
     """Log in to Fidelity and save the session."""
@@ -45,10 +49,25 @@ def login(
     if not totp_secret:
         totp_secret = os.environ.get(ENV_TOTP_SECRET)
 
+    # --totp-token takes precedence (explicit code from user's phone)
+    # --totp-secret is for automation (base32 key, auto-generates codes)
+    totp_input = totp_token or totp_secret
+
     # Authenticate
     client = FidelityClient()
     try:
-        client.login(username, password, totp_secret=totp_secret or None)
+        try:
+            client.login(username, password, totp_secret=totp_input or None)
+        except AuthenticationError as e:
+            # If 2FA is required and no secret/token was provided, prompt for it
+            if "2FA is required" in str(e) and not totp_input:
+                totp_input = typer.prompt(
+                    "2FA required. Enter your 6-digit code or TOTP secret key"
+                )
+                client = FidelityClient()  # Fresh client (old session is tainted)
+                client.login(username, password, totp_secret=totp_input)
+            else:
+                raise
         save_session(client._http)
         print_success("Login successful!")
 

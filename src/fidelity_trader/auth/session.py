@@ -105,9 +105,15 @@ class AuthSession:
         session_status = session_data.get("responseBaseInfo", {}).get("status", {})
 
         # Step 7b: Handle 2FA if session returns code 1201
-        if session_status.get("code") == 1201 and totp_secret:
-            import pyotp
-            totp_code = pyotp.TOTP(totp_secret).now()
+        if session_status.get("code") == 1201:
+            if not totp_secret:
+                raise AuthenticationError(
+                    "2FA is required. Provide totp_secret (base32 secret key) "
+                    "or totp_code (6-digit code from your authenticator app)."
+                )
+
+            # Detect whether this is a raw 6-digit code or a base32 secret key
+            totp_code = self._resolve_totp_code(totp_secret)
 
             # Submit TOTP code
             totp_resp = self._http.post(
@@ -133,6 +139,26 @@ class AuthSession:
 
         self._authenticated = True
         return session_data
+
+    @staticmethod
+    def _resolve_totp_code(totp_input: str) -> str:
+        """Resolve a TOTP input to a 6-digit code.
+
+        Accepts either:
+        - A 6-digit code directly (e.g. "482913") — returned as-is
+        - A base32 secret key (e.g. "JBSWY3DPEHPK3PXP") — generates current code via pyotp
+        """
+        stripped = totp_input.strip()
+        if stripped.isdigit() and len(stripped) == 6:
+            return stripped
+        # Treat as base32 secret key
+        try:
+            import pyotp
+            return pyotp.TOTP(stripped).now()
+        except Exception as exc:
+            raise AuthenticationError(
+                f"Invalid TOTP input: expected a 6-digit code or a base32 secret key. Error: {exc}"
+            ) from exc
 
     def _create_session(self) -> dict:
         """POST to session/login and return parsed JSON."""
