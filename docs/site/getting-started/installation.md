@@ -48,3 +48,28 @@ source ~/.bashrc
 ```bash
 python -m fidelity_trader.cli --help
 ```
+
+## Standalone CLI Binaries (No Python Required)
+
+Pre-built standalone binaries are attached to each [GitHub Release](https://github.com/brownjosiah/fidelity-trader-api/releases). These do not require Python to be installed.
+
+| Platform | Binary | Usage |
+|----------|--------|-------|
+| **Windows** | `ft-windows-amd64.exe` | `.\ft-windows-amd64.exe login` |
+| **Linux** | `ft-linux-amd64` | `chmod +x ft-linux-amd64 && ./ft-linux-amd64 login` |
+| **macOS** | `ft-macos-amd64` | `chmod +x ft-macos-amd64 && ./ft-macos-amd64 login` |
+
+Download the binary for your platform, rename it to `ft` (or `ft.exe`), and place it somewhere in your PATH.
+
+## Go / TypeScript Clients
+
+Pre-generated typed API clients are also attached to each release:
+
+| Artifact | Contents |
+|----------|----------|
+| `openapi.json` | OpenAPI 3.1 spec (for TypeScript tooling) |
+| `openapi-3.0.json` | OpenAPI 3.0.3 spec (for Go / openapi-generator) |
+| `fidelity-trader-api-go-client.tar.gz` | Go client package (types + HTTP client) |
+| `fidelity-trader-api-ts-client.tar.gz` | TypeScript type definitions |
+
+See the [Client Generation](../guide/client-generation.md) guide for usage instructions.

@@ -179,6 +179,32 @@ source ~/.bashrc
 python -m fidelity_trader.cli --help
 ```
 
+### Standalone CLI Binaries (No Python Required)
+
+Pre-built standalone binaries are attached to each [GitHub Release](https://github.com/brownjosiah/fidelity-trader-api/releases):
+
+| Platform | Binary |
+|----------|--------|
+| **Windows** | `ft-windows-amd64.exe` |
+| **Linux** | `ft-linux-amd64` |
+| **macOS** | `ft-macos-amd64` |
+
+Download, rename to `ft` (or `ft.exe`), place in your PATH, and run — no Python installation needed.
+
+### Release Artifacts
+
+Every [GitHub Release](https://github.com/brownjosiah/fidelity-trader-api/releases) includes:
+
+| Artifact | Description |
+|----------|-------------|
+| `ft-{platform}` | Standalone CLI binaries (Windows, Linux, macOS) |
+| `openapi.json` | OpenAPI 3.1 spec |
+| `openapi-3.0.json` | OpenAPI 3.0.3 spec (Go/Java/C# client generators) |
+| `fidelity-trader-api-go-client.tar.gz` | Pre-generated Go client |
+| `fidelity-trader-api-ts-client.tar.gz` | Pre-generated TypeScript types |
+
+See [Client Generation](#client-generation-go--typescript) for usage.
+
 ## Safety: Dry-Run Mode
 
 **All order placement is blocked by default.** This prevents accidental trades when developing or testing.
