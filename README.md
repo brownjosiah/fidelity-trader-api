@@ -36,6 +36,7 @@ Unofficial Python SDK, CLI, and self-hosted REST service for the Fidelity Trader
   - [Endpoints](#endpoints)
   - [Streaming (SSE / WebSocket)](#streaming-sse--websocket)
   - [Docker Deployment](#docker-deployment)
+- [Client Generation (Go / TypeScript)](#client-generation-go--typescript)
 - [Credential Providers](#credential-providers)
 - [Error Handling](#error-handling)
 - [Architecture](#architecture)
@@ -611,6 +612,72 @@ docker compose -f docker/docker-compose.yml up -d
 
 # Health check
 curl http://localhost:8787/health
+```
+
+---
+
+## Client Generation (Go / TypeScript)
+
+The service auto-generates a fully typed [OpenAPI spec](https://swagger.io/specification/) with 268 component schemas. Use it to generate native clients in any language.
+
+### Pre-generated Clients
+
+Ready-to-use clients are included in the repo:
+
+| Language | Location | Lines | Generator |
+|----------|----------|-------|-----------|
+| **Go** | `clients/go/client.gen.go` | 9,756 | [oapi-codegen](https://github.com/oapi-codegen/oapi-codegen) |
+| **TypeScript** | `clients/typescript/src/types.ts` | 6,172 | [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) |
+
+### Go Usage
+
+```go
+import fidelitytrader "github.com/brownjosiah/fidelity-trader-api/clients/go"
+
+client, err := fidelitytrader.NewClient("http://localhost:8787")
+resp, err := client.GetApiV1AccountsAcctPositions(ctx, "Z12345678")
+```
+
+### TypeScript Usage
+
+```typescript
+import type { paths } from "./types";
+import createClient from "openapi-fetch";
+
+const client = createClient<paths>({ baseUrl: "http://localhost:8787" });
+const { data } = await client.GET("/api/v1/accounts/{acct}/positions", {
+  params: { path: { acct: "Z12345678" } },
+});
+```
+
+### Regenerate Clients
+
+```bash
+# Export the OpenAPI spec
+make openapi            # OpenAPI 3.1 (for TypeScript)
+make openapi-compat     # OpenAPI 3.0.3 (for Go / openapi-generator)
+
+# Generate clients
+make client-ts          # TypeScript types
+make client-go          # Go client + types
+make clients            # Both
+```
+
+### Generate for Other Languages
+
+Export the spec and use any OpenAPI generator:
+
+```bash
+make openapi-compat
+
+# Java
+npx @openapitools/openapi-generator-cli generate -i openapi.json -g java -o clients/java
+
+# Rust
+npx @openapitools/openapi-generator-cli generate -i openapi.json -g rust -o clients/rust
+
+# C#
+npx @openapitools/openapi-generator-cli generate -i openapi.json -g csharp -o clients/csharp
 ```
 
 ---

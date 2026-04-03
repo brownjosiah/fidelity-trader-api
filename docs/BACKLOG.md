@@ -125,37 +125,29 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 | 5.3 | **License update to Apache 2.0** | **High** | DONE | pyproject.toml + LICENSE file updated |
 | 5.4 | **Package rename to `fidelity-trader-api`** | **High** | DONE | pyproject.toml updated, import name unchanged (`fidelity_trader`) |
 | 5.5 | **Service layer (FastAPI)** | **High** | DONE | 57 endpoints, streaming fan-out, Docker packaging |
-| 5.6 | **GitHub Pages docs site** | Medium | TODO | MkDocs Material, deployed via GitHub Actions |
+| 5.6 | **GitHub Pages docs site** | Medium | DONE | MkDocs Material, 12 pages, deployed via GitHub Actions |
 | 5.7 | **CI smoke tests (real account)** | Medium | TODO | Real Fidelity account, secrets in GitHub Actions |
 | 5.8 | **Docker Hub publishing** | Medium | TODO | Publish to GHCR + Docker Hub on release (workflow exists, needs secrets) |
 | 5.9 | **HashiCorp Vault credential provider** | Low | TODO | Complement existing AWS SM/SSM providers |
 | 5.10 | **Azure Key Vault credential provider** | Low | TODO | |
-| 5.11 | **Official TypeScript client** | Low | TODO | Generated from OpenAPI spec. Depends on 5.15 |
-| 5.12 | **Official Go client** | Low | TODO | Generated from OpenAPI spec. Depends on 5.15 |
+| 5.11 | **Official TypeScript client** | Low | DONE | 6,172 lines at `clients/typescript/src/types.ts` via openapi-typescript |
+| 5.12 | **Official Go client** | Low | DONE | 9,756 lines at `clients/go/client.gen.go` via oapi-codegen, compiles clean |
 | 5.13 | **Contribution guide** | Low | TODO | Capture-driven contribution model, how to capture + implement |
 | 5.14 | **Webhook/callback system** | Low | TODO | Phase 3 — POST to URL on order fill, price trigger |
-| 5.15 | **OpenAPI response typing** | Medium | TODO | See details below |
-| 5.16 | **OpenAPI spec export + Makefile** | Low | TODO | `make openapi` + `make clients`. Depends on 5.15 |
-| 5.17 | **Publish openapi.json as release artifact** | Low | TODO | Attach to GitHub Release. Depends on 5.16 |
-| 5.18 | **CI schema regression check** | Low | TODO | Fail if any response schema is empty. Depends on 5.15 |
+| 5.15 | **OpenAPI response typing** | Medium | DONE | Generic APIResponse[T], 268 schemas, 51/52 typed responses |
+| 5.16 | **OpenAPI spec export + Makefile** | Low | DONE | `make openapi`, `make openapi-compat` (3.0.3), `make client-ts`, `make client-go` |
+| 5.17 | **Publish openapi.json as release artifact** | Low | DONE | publish.yml attaches openapi.json to GitHub Releases |
+| 5.18 | **CI schema regression check** | Low | DONE | 12 tests — empty schema detection, count guards, envelope checks |
 
-### 5.15 Detail: OpenAPI Response Typing
+### 5.15 Detail: OpenAPI Response Typing — COMPLETED
 
-**Problem:** All 52 response schemas in the auto-generated OpenAPI spec are empty (`{}`). Client generators produce `any`/`interface{}` for every response — useless.
-
-**Root cause:** Routes return plain `dict` from `success()`. FastAPI can't infer response types.
-
-**Solution:** Refactor `APIResponse` to `Generic[T]`, add `response_model=APIResponse[SdkModel]` to every route decorator.
-
-**Scope:**
-- Refactor `service/models/responses.py` — make `APIResponse` generic (`data: Optional[T]`)
-- Create 5 Pydantic mirror models for dataclass SDK types (OptionChain, Montage, Chart, ScanResult, AlertActivation)
-- Create 11 small Pydantic schemas for inline dict responses (AuthStatus, HealthCheck, ServiceInfo, etc.)
-- Add `response_model=` parameter to all 51 route decorators across 10 route files
-- Add test verifying no empty schemas in `/openapi.json`
-- ~400 lines of changes, ~8-10 hours estimated
-
-**Dependency chain:** 5.15 → 5.16 (export script) → 5.17 (release artifact) + 5.18 (CI check) → 5.11/5.12 (TS/Go clients)
+**Solution implemented:**
+- `APIResponse` refactored to `Generic[T]` with `data: Optional[T]`
+- 27 new Pydantic schemas in `service/models/schemas.py` (5 dataclass mirrors + 11 inline schemas)
+- `response_model=APIResponse[X]` + `response_model_by_alias=True` on all 51 route decorators
+- 12 schema regression tests in `tests/test_openapi_schema.py`
+- OpenAPI 3.1→3.0.3 downgrade in export script for Go client generator compatibility
+- **Result:** 0→268 schemas, 0→51 typed responses, Go client (9,756 lines) + TS client (6,172 lines) generated and compiling
 
 ---
 
@@ -166,8 +158,8 @@ MVP complete (SDK + CLI + Service). Remaining work is ecosystem, polish, and cap
 | Priority | Done | Remaining | Items |
 |----------|------|-----------|-------|
 | **High** | 9 | 0 | All done: ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~, ~~License (5.3)~~, ~~Package rename (5.4)~~, ~~CLI tool (5.1)~~, ~~Dry-run mode (5.2)~~, ~~Service layer (5.5)~~ |
-| **Medium** | 13 | 8 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~, ~~Walkthrough (4.3)~~, ~~Session refresh (4.4)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Docs site (5.6), CI smoke tests (5.7), Docker Hub (5.8), OpenAPI response typing (5.15) |
-| **Low** | 3 | 18 | Done: ~~Async (4.5)~~, ~~Retry (4.6)~~, ~~PyPI/CI (4.7)~~. Remaining: Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Vault (5.9), Azure KV (5.10), TS client (5.11), Go client (5.12), Contribution guide (5.13), Webhooks (5.14), OpenAPI export (5.16), Spec release artifact (5.17), CI schema check (5.18) |
+| **Medium** | 15 | 6 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~, ~~Walkthrough (4.3)~~, ~~Session refresh (4.4)~~, ~~Docs site (5.6)~~, ~~OpenAPI typing (5.15)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), CI smoke tests (5.7) |
+| **Low** | 9 | 12 | Done: ~~Async (4.5)~~, ~~Retry (4.6)~~, ~~PyPI/CI (4.7)~~, ~~TS client (5.11)~~, ~~Go client (5.12)~~, ~~OpenAPI export (5.16)~~, ~~Release artifact (5.17)~~, ~~CI schema check (5.18)~~. Remaining: Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Docker Hub (5.8), Vault (5.9), Azure KV (5.10), Contribution guide (5.13), Webhooks (5.14) |
 | **Skip** | 1 | 0 | Login logging/telemetry (1.8) |
 
 ---

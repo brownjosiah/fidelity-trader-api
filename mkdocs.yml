@@ -59,6 +59,7 @@ nav:
       - CLI Reference: guide/cli.md
       - SDK Reference: guide/sdk.md
       - REST Service: guide/service.md
+      - Client Generation: guide/client-generation.md
       - Credential Providers: guide/credentials.md
       - Error Handling: guide/errors.md
   - Project:
