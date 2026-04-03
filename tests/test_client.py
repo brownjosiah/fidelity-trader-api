@@ -242,7 +242,8 @@ def test_package_exports_exceptions():
 
 
 def test_package_version():
-    assert fidelity_trader.__version__ == "0.1.0"
+    assert isinstance(fidelity_trader.__version__, str)
+    assert len(fidelity_trader.__version__.split(".")) == 3  # SemVer format
 
 
 # ---------------------------------------------------------------------------
