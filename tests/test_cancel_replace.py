@@ -666,7 +666,7 @@ class TestCancelReplaceAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = CancelReplaceAPI(httpx.Client())
+        api = CancelReplaceAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_cr_request(), conf_num="24C0SZD3")
 
         assert route.called
@@ -677,7 +677,7 @@ class TestCancelReplaceAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = CancelReplaceAPI(httpx.Client())
+        api = CancelReplaceAPI(httpx.Client(), live_trading=True)
         api.place_order(_make_cr_request(), conf_num="24C0SZD3")
 
         sent = json.loads(route.calls[0].request.content)
@@ -698,7 +698,7 @@ class TestCancelReplaceAPIPlace:
         respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = CancelReplaceAPI(httpx.Client())
+        api = CancelReplaceAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_cr_request(), conf_num="24C0SZD3")
 
         assert result.is_accepted
@@ -707,7 +707,7 @@ class TestCancelReplaceAPIPlace:
     @respx.mock
     def test_place_raises_on_http_error(self):
         respx.post(_PLACE_URL).mock(return_value=httpx.Response(500))
-        api = CancelReplaceAPI(httpx.Client())
+        api = CancelReplaceAPI(httpx.Client(), live_trading=True)
         with pytest.raises(httpx.HTTPStatusError):
             api.place_order(_make_cr_request(), conf_num="24C0SZD3")
 
@@ -727,7 +727,7 @@ class TestCancelReplaceAPIEndToEnd:
             )
         )
 
-        api = CancelReplaceAPI(httpx.Client())
+        api = CancelReplaceAPI(httpx.Client(), live_trading=True)
         order = _make_cr_request()
 
         preview = api.preview_order(order)

@@ -1,5 +1,7 @@
 # Fidelity Trader SDK
 
+**Your Fidelity account, your API.**
+
 Unofficial Python SDK for the Fidelity Trader+ API. Built by reverse-engineering network traffic from the Fidelity Trader+ desktop application via mitmproxy captures.
 
 > **Disclaimer:** This is an unofficial, community-driven project. It is not affiliated with, endorsed by, or supported by Fidelity Investments. Use at your own risk. Trading involves risk of loss.

@@ -421,7 +421,7 @@ class TestEquityOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = EquityOrderAPI(httpx.Client())
+        api = EquityOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="24A0L75J")
 
         assert route.called
@@ -432,7 +432,7 @@ class TestEquityOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = EquityOrderAPI(httpx.Client())
+        api = EquityOrderAPI(httpx.Client(), live_trading=True)
         api.place_order(_make_order_request(), conf_num="24A0L75J")
 
         sent = json.loads(route.calls[0].request.content)
@@ -451,7 +451,7 @@ class TestEquityOrderAPIPlace:
         respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = EquityOrderAPI(httpx.Client())
+        api = EquityOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="24A0L75J")
 
         assert result.is_accepted
@@ -460,7 +460,7 @@ class TestEquityOrderAPIPlace:
     @respx.mock
     def test_place_raises_on_http_error(self):
         respx.post(_PLACE_URL).mock(return_value=httpx.Response(500))
-        api = EquityOrderAPI(httpx.Client())
+        api = EquityOrderAPI(httpx.Client(), live_trading=True)
         with pytest.raises(httpx.HTTPStatusError):
             api.place_order(_make_order_request(), conf_num="24A0L75J")
 
@@ -476,7 +476,7 @@ class TestEquityOrderAPIEndToEnd:
             return_value=httpx.Response(200, json=_make_place_response("24A0L75J"))
         )
 
-        api = EquityOrderAPI(httpx.Client())
+        api = EquityOrderAPI(httpx.Client(), live_trading=True)
         order = _make_order_request()
 
         preview = api.preview_order(order)

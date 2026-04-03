@@ -2,6 +2,7 @@
 import httpx
 
 from fidelity_trader._http import DPSERVICE_URL
+from fidelity_trader.exceptions import DryRunError
 from fidelity_trader.models.cancel_replace import (
     CancelReplaceRequest,
     CancelReplacePreviewResponse,
@@ -20,8 +21,9 @@ class CancelReplaceAPI:
         2. Pass that ``confNum`` to ``place_order()`` to submit the modified order.
     """
 
-    def __init__(self, http: httpx.Client) -> None:
+    def __init__(self, http: httpx.Client, live_trading: bool = False) -> None:
         self._http = http
+        self._live_trading = live_trading
 
     def preview_order(
         self, order: CancelReplaceRequest
@@ -51,8 +53,15 @@ class CancelReplaceAPI:
         ``respTypeCode="A"`` when the modification is accepted.
 
         Raises:
+            DryRunError: if dry-run mode is active.
             httpx.HTTPStatusError: if the server returns a non-2xx status.
         """
+        if not self._live_trading:
+            raise DryRunError(
+                "Order placement blocked — dry-run mode is active. "
+                "Pass live_trading=True to FidelityClient or set "
+                "FIDELITY_LIVE_TRADING=true to enable live trading."
+            )
         body = order.to_place_body(conf_num)
         resp = self._http.post(f"{DPSERVICE_URL}{_CR_PLACE_PATH}", json=body)
         resp.raise_for_status()

@@ -6,6 +6,7 @@ from fidelity_trader.exceptions import (
     SessionExpiredError,
     CSRFTokenError,
     APIError,
+    DryRunError,
 )
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "SessionExpiredError",
     "CSRFTokenError",
     "APIError",
+    "DryRunError",
 ]
 __version__ = "0.1.0"

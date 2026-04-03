@@ -2,6 +2,7 @@
 import httpx
 
 from fidelity_trader._http import DPSERVICE_URL
+from fidelity_trader.exceptions import DryRunError
 from fidelity_trader.models.conditional_order import (
     ConditionalOrderRequest,
     ConditionalPreviewResponse,
@@ -23,8 +24,9 @@ class ConditionalOrderAPI:
            The confNums are applied to triggered legs only (index >= 1).
     """
 
-    def __init__(self, http: httpx.Client) -> None:
+    def __init__(self, http: httpx.Client, live_trading: bool = False) -> None:
         self._http = http
+        self._live_trading = live_trading
 
     def preview_order(
         self, order: ConditionalOrderRequest
@@ -56,8 +58,15 @@ class ConditionalOrderAPI:
         ``respTypeCode="A"`` for each leg when the order is accepted.
 
         Raises:
+            DryRunError: if dry-run mode is active.
             httpx.HTTPStatusError: if the server returns a non-2xx status.
         """
+        if not self._live_trading:
+            raise DryRunError(
+                "Order placement blocked — dry-run mode is active. "
+                "Pass live_trading=True to FidelityClient or set "
+                "FIDELITY_LIVE_TRADING=true to enable live trading."
+            )
         body = order.to_place_body(conf_nums)
         resp = self._http.post(f"{DPSERVICE_URL}{_COND_PLACE_PATH}", json=body)
         resp.raise_for_status()

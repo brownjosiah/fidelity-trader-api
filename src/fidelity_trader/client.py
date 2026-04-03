@@ -1,5 +1,7 @@
 """Main client that composes all Fidelity API modules."""
 
+import os
+
 from fidelity_trader._http import create_atp_session, BASE_URL, AUTH_URL
 from fidelity_trader.auth.session import AuthSession
 from fidelity_trader.portfolio.positions import PositionsAPI
@@ -48,7 +50,18 @@ class FidelityClient:
             earnings = client.research.get_earnings(["AAPL", "MSFT"])
     """
 
-    def __init__(self, max_retries: int = 0, retry_delay: float = 1.0) -> None:
+    def __init__(
+        self,
+        max_retries: int = 0,
+        retry_delay: float = 1.0,
+        live_trading: bool | None = None,
+    ) -> None:
+        if live_trading is None:
+            live_trading = os.environ.get(
+                "FIDELITY_LIVE_TRADING", ""
+            ).lower() in ("true", "1", "yes")
+        self._live_trading = live_trading
+
         self._http = create_atp_session(
             max_retries=max_retries,
             retry_delay=retry_delay,
@@ -62,11 +75,11 @@ class FidelityClient:
         self.option_summary = OptionSummaryAPI(self._http)
         self.transactions = TransactionsAPI(self._http)
         self.order_status = OrderStatusAPI(self._http)
-        self.equity_orders = EquityOrderAPI(self._http)
-        self.option_orders = MultiLegOptionOrderAPI(self._http)
+        self.equity_orders = EquityOrderAPI(self._http, live_trading=live_trading)
+        self.option_orders = MultiLegOptionOrderAPI(self._http, live_trading=live_trading)
         self.cancel_order = OrderCancelAPI(self._http)
-        self.single_option_orders = SingleOptionOrderAPI(self._http)
-        self.cancel_replace = CancelReplaceAPI(self._http)
+        self.single_option_orders = SingleOptionOrderAPI(self._http, live_trading=live_trading)
+        self.cancel_replace = CancelReplaceAPI(self._http, live_trading=live_trading)
         self.research = ResearchAPI(self._http)
         self.search = SearchAPI(self._http)
         self.streaming = StreamingNewsAPI(self._http)
@@ -86,7 +99,7 @@ class FidelityClient:
         self.holiday_calendar = HolidayCalendarAPI(self._http)
         self.staged_orders = StagedOrderAPI(self._http)
         self.price_triggers = PriceTriggersAPI(self._http)
-        self.conditional_orders = ConditionalOrderAPI(self._http)
+        self.conditional_orders = ConditionalOrderAPI(self._http, live_trading=live_trading)
         self.screener = ScreenerAPI(self._http)
 
     def login(self, username: str, password: str, totp_secret: str = None) -> dict:

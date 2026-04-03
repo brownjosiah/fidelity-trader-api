@@ -16,3 +16,6 @@ class APIError(FidelityError):
         super().__init__(message)
         self.status_code = status_code
         self.response_body = response_body
+
+class DryRunError(FidelityError):
+    """Order placement blocked because dry-run mode is active."""

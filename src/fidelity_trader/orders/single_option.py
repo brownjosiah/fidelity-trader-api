@@ -2,6 +2,7 @@
 import httpx
 
 from fidelity_trader._http import DPSERVICE_URL
+from fidelity_trader.exceptions import DryRunError
 from fidelity_trader.models.single_option_order import (
     SingleOptionOrderRequest,
     SingleOptionPreviewResponse,
@@ -24,8 +25,9 @@ class SingleOptionOrderAPI:
         ``POST https://dpservice.fidelity.com/ftgw/dp/orderentry/option/place/v2``
     """
 
-    def __init__(self, http: httpx.Client) -> None:
+    def __init__(self, http: httpx.Client, live_trading: bool = False) -> None:
         self._http = http
+        self._live_trading = live_trading
 
     def preview_order(
         self, order: SingleOptionOrderRequest
@@ -54,8 +56,15 @@ class SingleOptionOrderAPI:
         ``respTypeCode="A"`` when the order is accepted.
 
         Raises:
+            DryRunError: if dry-run mode is active.
             httpx.HTTPStatusError: if the server returns a non-2xx status.
         """
+        if not self._live_trading:
+            raise DryRunError(
+                "Order placement blocked — dry-run mode is active. "
+                "Pass live_trading=True to FidelityClient or set "
+                "FIDELITY_LIVE_TRADING=true to enable live trading."
+            )
         body = order.to_place_body(conf_num)
         resp = self._http.post(f"{DPSERVICE_URL}{_OPTION_PLACE_PATH}", json=body)
         resp.raise_for_status()

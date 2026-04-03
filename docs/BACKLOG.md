@@ -114,19 +114,38 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 | 4.4 | **Session keep-alive / auto-refresh** | Medium | TODO | No automatic session extension — long-running apps will timeout |
 | 4.5 | **Async client option** | Low | TODO | All modules are sync httpx; could add async variants |
 | 4.6 | **Rate limiting / retry logic** | Low | TODO | No retry on transient failures |
-| 4.7 | **PyPI packaging / CI** | Low | TODO | pyproject.toml exists but no publish workflow or CI pipeline |
+| 4.7 | **PyPI packaging / CI** | Low | DONE | GitHub Actions for pytest + ruff CI and PyPI trusted publishing |
+
+### 5. Product & Release (from [DECISIONS.md](DECISIONS.md))
+
+| # | Item | Priority | Status | Notes |
+|---|------|----------|--------|-------|
+| 5.1 | **CLI tool (`ft` command)** | **High** | TODO | `ft login`, `ft positions`, `ft buy` — built on typer, ships with SDK package |
+| 5.2 | **Dry-run mode** | **High** | TODO | Default preview-only for orders. Opt-in via `--live` flag / `FIDELITY_LIVE_TRADING=true` env var |
+| 5.3 | **License update to Apache 2.0** | **High** | DONE | pyproject.toml updated, need LICENSE file |
+| 5.4 | **Package rename to `fidelity-trader-api`** | **High** | DONE | pyproject.toml updated, import name unchanged (`fidelity_trader`) |
+| 5.5 | **Service layer (FastAPI)** | **High** | TODO | See [SERVICE_PLAN.md](SERVICE_PLAN.md) — all 5 phases |
+| 5.6 | **GitHub Pages docs site** | Medium | TODO | MkDocs Material, deployed via GitHub Actions |
+| 5.7 | **CI smoke tests (real account)** | Medium | TODO | Real Fidelity account, secrets in GitHub Actions |
+| 5.8 | **Docker Hub publishing** | Medium | TODO | Publish to GHCR + Docker Hub on release |
+| 5.9 | **HashiCorp Vault credential provider** | Low | TODO | Complement existing AWS SM/SSM providers |
+| 5.10 | **Azure Key Vault credential provider** | Low | TODO | |
+| 5.11 | **Official TypeScript client** | Low | TODO | Generated from OpenAPI spec |
+| 5.12 | **Official Go client** | Low | TODO | Generated from OpenAPI spec |
+| 5.13 | **Contribution guide** | Low | TODO | Capture-driven contribution model, how to capture + implement |
+| 5.14 | **Webhook/callback system** | Low | TODO | Phase 3 — POST to URL on order fill, price trigger |
 
 ---
 
 ## Priority Summary
 
-All SDK work (Phases 1-4 below) takes priority over the service layer. The self-hosted REST/WebSocket service ([`SERVICE_PLAN.md`](SERVICE_PLAN.md)) is Phase 2 of the overall project roadmap and should begin once the core trading workflow is complete.
+SDK completeness → CLI + dry-run → Service layer → Docs/ecosystem. See [PRODUCT_VISION.md](PRODUCT_VISION.md) for full strategy and [DECISIONS.md](DECISIONS.md) for all locked decisions.
 
 | Priority | Done | Remaining | Items |
 |----------|------|-----------|-------|
-| **High** | 4 | 0 | ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~ |
-| **Medium** | 8 | 7 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Walkthrough (4.3), Session refresh (4.4) |
-| **Low** | 0 | 11 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), PyPI (4.7) |
+| **High** | 6 | 3 | Done: ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~, ~~License (5.3)~~, ~~Package rename (5.4)~~. Remaining: CLI tool (5.1), Dry-run mode (5.2), Service layer (5.5) |
+| **Medium** | 8 | 10 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), Walkthrough (4.3), Session refresh (4.4), Docs site (5.6), CI smoke tests (5.7), Docker Hub (5.8) |
+| **Low** | 0 | 17 | Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Async (4.5), Retry (4.6), Vault (5.9), Azure KV (5.10), TS client (5.11), Go client (5.12), Contribution guide (5.13), Webhooks (5.14) |
 | **Skip** | 1 | 0 | Login logging/telemetry (1.8) |
 
 ---

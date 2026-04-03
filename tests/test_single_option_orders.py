@@ -567,7 +567,7 @@ class TestSingleOptionOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = SingleOptionOrderAPI(httpx.Client())
+        api = SingleOptionOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="D02PXWRR")
 
         assert route.called
@@ -578,7 +578,7 @@ class TestSingleOptionOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = SingleOptionOrderAPI(httpx.Client())
+        api = SingleOptionOrderAPI(httpx.Client(), live_trading=True)
         api.place_order(_make_order_request(), conf_num="D02PXWRR")
 
         sent = json.loads(route.calls[0].request.content)
@@ -603,7 +603,7 @@ class TestSingleOptionOrderAPIPlace:
         respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = SingleOptionOrderAPI(httpx.Client())
+        api = SingleOptionOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="D02PXWRR")
 
         assert result.is_accepted
@@ -612,7 +612,7 @@ class TestSingleOptionOrderAPIPlace:
     @respx.mock
     def test_place_raises_on_http_error(self):
         respx.post(_PLACE_URL).mock(return_value=httpx.Response(500))
-        api = SingleOptionOrderAPI(httpx.Client())
+        api = SingleOptionOrderAPI(httpx.Client(), live_trading=True)
         with pytest.raises(httpx.HTTPStatusError):
             api.place_order(_make_order_request(), conf_num="D02PXWRR")
 
@@ -632,7 +632,7 @@ class TestSingleOptionOrderAPIEndToEnd:
             )
         )
 
-        api = SingleOptionOrderAPI(httpx.Client())
+        api = SingleOptionOrderAPI(httpx.Client(), live_trading=True)
         order = _make_order_request()
 
         preview = api.preview_order(order)

@@ -515,7 +515,7 @@ class TestMultiLegOptionOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = MultiLegOptionOrderAPI(httpx.Client())
+        api = MultiLegOptionOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="C31PHDRX")
 
         assert route.called
@@ -526,7 +526,7 @@ class TestMultiLegOptionOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = MultiLegOptionOrderAPI(httpx.Client())
+        api = MultiLegOptionOrderAPI(httpx.Client(), live_trading=True)
         api.place_order(_make_order_request(), conf_num="C31PHDRX")
 
         sent = json.loads(route.calls[0].request.content)
@@ -543,7 +543,7 @@ class TestMultiLegOptionOrderAPIPlace:
         respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_place_response())
         )
-        api = MultiLegOptionOrderAPI(httpx.Client())
+        api = MultiLegOptionOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(_make_order_request(), conf_num="C31PHDRX")
 
         assert result.is_accepted
@@ -552,7 +552,7 @@ class TestMultiLegOptionOrderAPIPlace:
     @respx.mock
     def test_place_raises_on_http_error(self):
         respx.post(_PLACE_URL).mock(return_value=httpx.Response(500))
-        api = MultiLegOptionOrderAPI(httpx.Client())
+        api = MultiLegOptionOrderAPI(httpx.Client(), live_trading=True)
         with pytest.raises(httpx.HTTPStatusError):
             api.place_order(_make_order_request(), conf_num="C31PHDRX")
 
@@ -568,7 +568,7 @@ class TestMultiLegOptionOrderAPIEndToEnd:
             return_value=httpx.Response(200, json=_make_place_response("C31PHDRX"))
         )
 
-        api = MultiLegOptionOrderAPI(httpx.Client())
+        api = MultiLegOptionOrderAPI(httpx.Client(), live_trading=True)
         order = _make_order_request()
 
         preview = api.preview_order(order)

@@ -234,11 +234,13 @@ def test_package_exports_exceptions():
         SessionExpiredError,
         CSRFTokenError,
         APIError,
+        DryRunError,
     )
     assert issubclass(AuthenticationError, FidelityError)
     assert issubclass(SessionExpiredError, FidelityError)
     assert issubclass(CSRFTokenError, FidelityError)
     assert issubclass(APIError, FidelityError)
+    assert issubclass(DryRunError, FidelityError)
 
 
 def test_package_version():

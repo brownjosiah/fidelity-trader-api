@@ -748,7 +748,7 @@ class TestConditionalOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_otoco_place_response())
         )
-        api = ConditionalOrderAPI(httpx.Client())
+        api = ConditionalOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(
             _make_otoco_request(), conf_nums=["D02JRNZX", "D02JRPBB"]
         )
@@ -761,7 +761,7 @@ class TestConditionalOrderAPIPlace:
         route = respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_otoco_place_response())
         )
-        api = ConditionalOrderAPI(httpx.Client())
+        api = ConditionalOrderAPI(httpx.Client(), live_trading=True)
         api.place_order(_make_otoco_request(), conf_nums=["D02JRNZX", "D02JRPBB"])
 
         sent = json.loads(route.calls[0].request.content)
@@ -783,7 +783,7 @@ class TestConditionalOrderAPIPlace:
         respx.post(_PLACE_URL).mock(
             return_value=httpx.Response(200, json=_make_otoco_place_response())
         )
-        api = ConditionalOrderAPI(httpx.Client())
+        api = ConditionalOrderAPI(httpx.Client(), live_trading=True)
         result = api.place_order(
             _make_otoco_request(), conf_nums=["D02JRNZX", "D02JRPBB"]
         )
@@ -794,7 +794,7 @@ class TestConditionalOrderAPIPlace:
     @respx.mock
     def test_place_raises_on_http_error(self):
         respx.post(_PLACE_URL).mock(return_value=httpx.Response(500))
-        api = ConditionalOrderAPI(httpx.Client())
+        api = ConditionalOrderAPI(httpx.Client(), live_trading=True)
         with pytest.raises(httpx.HTTPStatusError):
             api.place_order(_make_otoco_request(), conf_nums=["X", "Y"])
 
@@ -810,7 +810,7 @@ class TestConditionalOrderAPIEndToEnd:
             return_value=httpx.Response(200, json=_make_otoco_place_response())
         )
 
-        api = ConditionalOrderAPI(httpx.Client())
+        api = ConditionalOrderAPI(httpx.Client(), live_trading=True)
         order = _make_otoco_request()
 
         preview = api.preview_order(order)
