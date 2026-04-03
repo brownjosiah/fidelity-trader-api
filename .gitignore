@@ -12,3 +12,4 @@ build/
 *.whl
 data/
 *.db
+/site/

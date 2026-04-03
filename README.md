@@ -9,6 +9,8 @@ Unofficial Python SDK, CLI, and self-hosted REST service for the Fidelity Trader
 [![Tests](https://github.com/brownjosiah/fidelity-trader-api/actions/workflows/ci.yml/badge.svg)](https://github.com/brownjosiah/fidelity-trader-api/actions)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
+**[Full Documentation](https://brownjosiah.github.io/fidelity-trader-api/)**
+
 ---
 
 ## Table of Contents
