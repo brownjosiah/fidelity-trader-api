@@ -58,7 +58,7 @@ nav:
   - User Guide:
       - CLI Reference: guide/cli.md
       - SDK Reference: guide/sdk.md
-      - REST Service: guide/service.md
+      - REST Service (Docker): guide/service.md
       - Client Generation: guide/client-generation.md
       - Credential Providers: guide/credentials.md
       - Error Handling: guide/errors.md
