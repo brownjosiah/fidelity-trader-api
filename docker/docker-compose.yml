@@ -1,0 +1,19 @@
+services:
+  fidelity-trader:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${FTSERVICE_PORT:-8787}:8787"
+    volumes:
+      - ftservice-data:/app/data
+    env_file: .env
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  ftservice-data:
