@@ -91,24 +91,26 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[cli]" pyinstaller
       - name: Build binary
-        run: |
-          pyinstaller --onefile --name ${{ matrix.artifact }} \
-            --hidden-import fidelity_trader.cli \
-            --hidden-import fidelity_trader.cli._app \
-            --hidden-import fidelity_trader.cli._auth \
-            --hidden-import fidelity_trader.cli._portfolio \
-            --hidden-import fidelity_trader.cli._orders \
-            --hidden-import fidelity_trader.cli._options \
-            --hidden-import fidelity_trader.cli._market_data \
-            --hidden-import fidelity_trader.cli._research \
-            --hidden-import fidelity_trader.cli._stream \
-            --hidden-import fidelity_trader.cli._session \
-            --hidden-import fidelity_trader.cli._output \
-            --hidden-import fidelity_trader.cli._errors \
-            --hidden-import fidelity_trader.cli._config \
-            --collect-all fidelity_trader \
-            src/fidelity_trader/cli/__init__.py
+        shell: bash
+        run: >
+          pyinstaller --onefile --name ${{ matrix.artifact }}
+          --hidden-import fidelity_trader.cli
+          --hidden-import fidelity_trader.cli._app
+          --hidden-import fidelity_trader.cli._auth
+          --hidden-import fidelity_trader.cli._portfolio
+          --hidden-import fidelity_trader.cli._orders
+          --hidden-import fidelity_trader.cli._options
+          --hidden-import fidelity_trader.cli._market_data
+          --hidden-import fidelity_trader.cli._research
+          --hidden-import fidelity_trader.cli._stream
+          --hidden-import fidelity_trader.cli._session
+          --hidden-import fidelity_trader.cli._output
+          --hidden-import fidelity_trader.cli._errors
+          --hidden-import fidelity_trader.cli._config
+          --collect-all fidelity_trader
+          src/fidelity_trader/cli/__init__.py
       - name: Attach binary to release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${GITHUB_REF#refs/tags/}" dist/${{ matrix.artifact }} --clobber
