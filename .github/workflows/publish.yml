@@ -149,8 +149,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login to Docker Hub
-        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+        if: env.DOCKERHUB_USERNAME != ''
         uses: docker/login-action@v3
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -159,12 +161,7 @@ jobs:
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
-      - name: Check Docker Hub availability
-        id: dockerhub
-        run: echo "available=${{ secrets.DOCKERHUB_USERNAME != '' }}" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push (GHCR only)
-        if: steps.dockerhub.outputs.available != 'true'
+      - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -173,20 +170,5 @@ jobs:
           tags: |
             ghcr.io/brownjosiah/fidelity-trader-api:${{ steps.version.outputs.tag }}
             ghcr.io/brownjosiah/fidelity-trader-api:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push (GHCR + Docker Hub)
-        if: steps.dockerhub.outputs.available == 'true'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/brownjosiah/fidelity-trader-api:${{ steps.version.outputs.tag }}
-            ghcr.io/brownjosiah/fidelity-trader-api:latest
-            brownjosiah/fidelity-trader-api:${{ steps.version.outputs.tag }}
-            brownjosiah/fidelity-trader-api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
