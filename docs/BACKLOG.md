@@ -1,7 +1,7 @@
 # Fidelity Trader SDK — Project Backlog
 
-> Last updated: 2026-04-03
-> Current state: **31 SDK modules**, **17 CLI commands**, **57 service endpoints**, **1587 tests**, **8 capture files**
+> Last updated: 2026-04-04
+> Current state: **31 SDK modules**, **17 CLI commands**, **57 service endpoints**, **1587 tests**, **8 capture files**, **17 agent definitions**
 
 ---
 
@@ -139,6 +139,38 @@ Features that exist in Trader+ but we haven't captured the traffic yet.
 | 5.17 | **Publish openapi.json as release artifact** | Low | DONE | publish.yml attaches openapi.json to GitHub Releases |
 | 5.18 | **CI schema regression check** | Low | DONE | 12 tests — empty schema detection, count guards, envelope checks |
 
+### 6. Decompilation & Static Analysis
+
+Reverse engineering Fidelity Trader+ v4.5.1.4 (.NET 10 / C# / MAUI + WinUI 3) via ILSpy decompilation. 62 first-party `Fmr.*` DLLs, all managed code, no obfuscation. App located at `C:\Program Files\WindowsApps\68D72461-B3DB-4FE2-AE47-50EF0FD7254F_4.5.1.4_x64__w2vdhxtqt7mse`.
+
+| # | Phase | Agent | Priority | Status | Output | Notes |
+|---|-------|-------|----------|--------|--------|-------|
+| 6.1 | **Phase 1: Decompiler Setup** | `decompiler-setup` | **High** | DONE | `~/fidelity-decomp/src/` | 97 assemblies decompiled, 8,784 C# files, 5,599 types, 0 failures |
+| 6.2 | **Phase 2: Config Mining** | `config-miner` | **High** | DONE | `analysis/config-schemas.md` | 200+ field bindings, 25 scanner types, 9 account type views, BEPS GraphQL |
+| 6.3 | **Phase 3: API Surface Extraction** | `api-surface-extractor` | **High** | DONE | `analysis/api-endpoints.md` | 35 Refit interfaces, 77 HTTP endpoints, 25-31 undiscovered endpoints |
+| 6.4 | **Phase 4: Data Model Extraction** | `model-extractor` | **High** | DONE | `analysis/data-models.md` | 852 model files, 256 enums, 180+ MDDS field IDs, 20 missing models |
+| 6.5 | **Phase 5: Protocol Analysis** | `protocol-decoder` | Medium | DONE | `analysis/protocols.md` | Complete MDDS spec (4 sub types), BEPS via AWS AppSync, news via AcquireMedia |
+| 6.6 | **Phase 6: State Flow Analysis** | `state-flow-analyzer` | Medium | DONE | `analysis/state-architecture.md` | 88 Fluxor states, 48 LaunchDarkly flags, 60+ endpoints via effects |
+| 6.7 | **Phase 7: SDK Reconciliation** | `sdk-reconciler` | **High** | DONE | `analysis/sdk-reconciliation.md` | 59% coverage, 12 critical corrections, 90+ missing fields, 45-item roadmap |
+
+**Parallelism:** Phases 1+2 (config doesn't need decompiled source), 3+4 (independent analysis), 5+6 (independent analysis). Phase 7 requires 3+4+5 completed.
+
+**Key targets:**
+- `Fmr.ApiHeader.dll` — HTTP header construction (how ALL requests are built)
+- `Fmr.SocketClient.dll` — Complete MDDS WebSocket protocol spec + field ID map
+- `Fmr.Orders.dll` + `Fmr.Trade.dll` — Full order API contracts (largest business DLLs)
+- `Fmr.BepsAlertStreaming.dll` — GraphQL alert subscription protocol
+- `Fmr.Sirius.dll` — Platform core, HttpClient factory, base URL config
+
+**Expected outcomes:**
+- Complete API endpoint inventory (vs. 31 currently captured)
+- Full field ID → name mapping for MDDS streaming
+- Missing Pydantic model fields and type corrections
+- Header and auth flow verification
+- New endpoints for backlog
+
+---
+
 ### 5.15 Detail: OpenAPI Response Typing — COMPLETED
 
 **Solution implemented:**
@@ -157,8 +189,8 @@ MVP complete (SDK + CLI + Service). Remaining work is ecosystem, polish, and cap
 
 | Priority | Done | Remaining | Items |
 |----------|------|-----------|-------|
-| **High** | 9 | 0 | All done: ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~, ~~License (5.3)~~, ~~Package rename (5.4)~~, ~~CLI tool (5.1)~~, ~~Dry-run mode (5.2)~~, ~~Service layer (5.5)~~ |
-| **Medium** | 15 | 6 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~, ~~Walkthrough (4.3)~~, ~~Session refresh (4.4)~~, ~~Docs site (5.6)~~, ~~OpenAPI typing (5.15)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), CI smoke tests (5.7) |
+| **High** | 14 | 0 | All done: ~~Single-leg options (2.1)~~, ~~Order modify (2.2)~~, ~~Conditional orders (2.3)~~, ~~L2 streaming (3.1)~~, ~~License (5.3)~~, ~~Package rename (5.4)~~, ~~CLI tool (5.1)~~, ~~Dry-run mode (5.2)~~, ~~Service layer (5.5)~~, ~~Decompiler setup (6.1)~~, ~~Config mining (6.2)~~, ~~API surface extraction (6.3)~~, ~~Model extraction (6.4)~~, ~~SDK reconciliation (6.7)~~ |
+| **Medium** | 17 | 6 | Done: ~~Holiday calendar (1.1)~~, ~~Staged orders (1.2)~~, ~~Price triggers (1.4)~~, ~~Session keepalive (1.7)~~, ~~Margin (2.7)~~, ~~Screener (2.8)~~, ~~Stale models (4.1)~~, ~~CLAUDE.md (4.2)~~, ~~Walkthrough (4.3)~~, ~~Session refresh (4.4)~~, ~~Docs site (5.6)~~, ~~OpenAPI typing (5.15)~~, ~~Protocol analysis (6.5)~~, ~~State flow analysis (6.6)~~. Remaining: Watchlist CRUD (2.4), Alerts CRUD (2.5), Full option chain (2.6), News feed (2.9/3.2), Fundamentals (2.10), CI smoke tests (5.7) |
 | **Low** | 9 | 12 | Done: ~~Async (4.5)~~, ~~Retry (4.6)~~, ~~PyPI/CI (4.7)~~, ~~TS client (5.11)~~, ~~Go client (5.12)~~, ~~OpenAPI export (5.16)~~, ~~Release artifact (5.17)~~, ~~CI schema check (5.18)~~. Remaining: Notebook (1.3), Shared prefs (1.5), Content CMS (1.6), Analyst ratings (2.11), Transfers (2.12), Docs (2.13), DRIP (2.14), MDDS reconnect (3.3), Docker Hub (5.8), Vault (5.9), Azure KV (5.10), Contribution guide (5.13), Webhooks (5.14) |
 | **Skip** | 1 | 0 | Login logging/telemetry (1.8) |
 
